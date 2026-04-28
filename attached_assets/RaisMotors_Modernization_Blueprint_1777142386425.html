@@ -1,0 +1,1849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rais Motors — System Modernization Blueprint</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f13;
+    --bg2: #141720;
+    --bg3: #1c2030;
+    --border: #2a2f3e;
+    --border2: #353c52;
+    --amber: #f59e0b;
+    --amber-dim: #b45309;
+    --amber-soft: rgba(245,158,11,0.12);
+    --amber-glow: rgba(245,158,11,0.06);
+    --green: #10b981;
+    --green-soft: rgba(16,185,129,0.1);
+    --red: #ef4444;
+    --red-soft: rgba(239,68,68,0.1);
+    --blue: #3b82f6;
+    --blue-soft: rgba(59,130,246,0.1);
+    --purple: #8b5cf6;
+    --purple-soft: rgba(139,92,246,0.1);
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --font: 'Space Grotesk', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ── LAYOUT ── */
+  .shell { display: flex; min-height: 100vh; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 28px 0;
+  }
+  .sidebar-logo {
+    padding: 0 24px 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .sidebar-logo .brand {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--amber);
+    letter-spacing: -0.3px;
+  }
+  .sidebar-logo .sub {
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-top: 2px;
+  }
+  .nav-section {
+    padding: 8px 24px 4px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    color: var(--text3);
+    font-weight: 600;
+    margin-top: 8px;
+  }
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 24px;
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+  }
+  .nav-link:hover, .nav-link.active {
+    color: var(--amber);
+    background: var(--amber-glow);
+    border-left-color: var(--amber);
+  }
+  .nav-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border2);
+    flex-shrink: 0;
+  }
+  .nav-link.active .nav-dot, .nav-link:hover .nav-dot { background: var(--amber); }
+
+  /* ── MAIN CONTENT ── */
+  .main { flex: 1; min-width: 0; }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(135deg, var(--bg2) 0%, var(--bg3) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 60px 64px 56px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(245,158,11,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--amber-soft);
+    border: 1px solid rgba(245,158,11,0.3);
+    color: var(--amber);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-size: 40px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.15;
+    letter-spacing: -0.5px;
+    margin-bottom: 16px;
+  }
+  .hero h1 span { color: var(--amber); }
+  .hero .subtitle {
+    font-size: 17px;
+    color: var(--text2);
+    max-width: 560px;
+    line-height: 1.6;
+    margin-bottom: 32px;
+  }
+  .hero-stats {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .hero-stat { }
+  .hero-stat .val {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--amber);
+    font-variant-numeric: tabular-nums;
+  }
+  .hero-stat .lbl {
+    font-size: 12px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: 2px;
+  }
+
+  /* ── SECTIONS ── */
+  .section {
+    padding: 56px 64px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section:last-child { border-bottom: none; }
+  .section-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.3px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-title .num {
+    background: var(--amber-soft);
+    border: 1px solid rgba(245,158,11,0.25);
+    color: var(--amber);
+    font-size: 12px;
+    font-weight: 700;
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .section-desc {
+    color: var(--text2);
+    font-size: 15px;
+    margin-bottom: 36px;
+    max-width: 640px;
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+  }
+  .card-sm { padding: 18px 20px; }
+  .card + .card { margin-top: 16px; }
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-body { color: var(--text2); font-size: 14px; line-height: 1.65; }
+
+  /* ── GRIDS ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+  /* ── BADGES ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  .badge-red { background: var(--red-soft); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+  .badge-amber { background: var(--amber-soft); color: var(--amber); border: 1px solid rgba(245,158,11,0.25); }
+  .badge-green { background: var(--green-soft); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+  .badge-blue { background: var(--blue-soft); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
+  .badge-purple { background: var(--purple-soft); color: #a78bfa; border: 1px solid rgba(139,92,246,0.2); }
+
+  /* ── CODE BLOCKS ── */
+  .code-block {
+    background: #0a0c10;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin: 16px 0;
+    overflow-x: auto;
+  }
+  .code-block code {
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.8;
+    color: #e2e8f0;
+  }
+  .code-block .cm { color: #64748b; }
+  .code-block .ck { color: #93c5fd; }
+  .code-block .cs { color: #86efac; }
+  .code-block .cv { color: #fde68a; }
+  .code-block .cf { color: #c4b5fd; }
+  .code-block .cn { color: #f9a8d4; }
+
+  /* ── ISSUE CARDS ── */
+  .issue-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--red);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+  .issue-card.warn { border-left-color: var(--amber); }
+  .issue-card.info { border-left-color: var(--blue); }
+  .issue-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .issue-body { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+  /* ── TABLE ── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    margin: 16px 0;
+  }
+  .data-table th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    color: var(--text3);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+  }
+  .data-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+    vertical-align: top;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--bg3); }
+  .mono { font-family: var(--mono); font-size: 12px; color: #93c5fd; }
+
+  /* ── STEPS ── */
+  .steps { counter-reset: step; }
+  .step {
+    display: flex;
+    gap: 20px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .step:last-child { border-bottom: none; }
+  .step-num {
+    counter-increment: step;
+    width: 32px; height: 32px;
+    background: var(--amber-soft);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--amber);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-content { flex: 1; }
+  .step-title { font-weight: 600; color: var(--text); margin-bottom: 4px; font-size: 14.5px; }
+  .step-body { font-size: 13.5px; color: var(--text2); line-height: 1.65; }
+
+  /* ── ARCH DIAGRAM ── */
+  .arch-box {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    text-align: center;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .arch-box.highlight {
+    border-color: rgba(245,158,11,0.4);
+    background: var(--amber-soft);
+    color: var(--amber);
+  }
+  .arch-box.new-feat {
+    border-color: rgba(16,185,129,0.3);
+    background: var(--green-soft);
+    color: #34d399;
+  }
+  .arch-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--border2);
+    padding: 4px 0;
+  }
+
+  /* ── DB SCHEMA CARDS ── */
+  .db-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    font-size: 12.5px;
+  }
+  .db-card-header {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 14px;
+    font-weight: 600;
+    color: var(--amber);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .db-card-row {
+    padding: 5px 14px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    border-bottom: 1px solid rgba(42,47,62,0.5);
+    color: var(--text2);
+  }
+  .db-card-row:last-child { border-bottom: none; }
+  .db-field { flex: 1; font-family: var(--mono); font-size: 11.5px; color: #93c5fd; }
+  .db-type { font-size: 11px; color: var(--text3); }
+  .db-key { font-size: 10px; color: var(--amber); font-weight: 700; background: var(--amber-soft); padding: 1px 5px; border-radius: 3px; }
+
+  /* ── MOCKUP FRAMES ── */
+  .mockup-frame {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin: 20px 0;
+  }
+  .mockup-topbar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .dot-red { width:10px;height:10px;border-radius:50%;background:#ef4444;opacity:0.7; }
+  .dot-yellow { width:10px;height:10px;border-radius:50%;background:#f59e0b;opacity:0.7; }
+  .dot-green { width:10px;height:10px;border-radius:50%;background:#10b981;opacity:0.7; }
+  .mockup-url {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--mono);
+    text-align: center;
+  }
+  .mockup-body { padding: 20px; }
+
+  /* ── LOGIN MOCKUP ── */
+  .login-mockup {
+    max-width: 380px;
+    margin: 0 auto;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 36px 32px;
+  }
+  .login-logo {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .login-logo .icon {
+    width: 52px; height: 52px;
+    background: var(--amber-soft);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    margin: 0 auto 12px;
+  }
+  .login-logo .title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .login-logo .sub {
+    font-size: 13px;
+    color: var(--text3);
+  }
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    font-size: 12px;
+    color: var(--text3);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .form-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 13.5px;
+    font-family: var(--font);
+  }
+  .form-input:focus { outline: none; border-color: var(--amber); box-shadow: 0 0 0 3px rgba(245,158,11,0.1); }
+  .btn-primary {
+    width: 100%;
+    background: var(--amber);
+    color: #0d0f13;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 11px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: var(--font);
+    margin-top: 8px;
+  }
+
+  /* ── DASHBOARD MOCKUP ── */
+  .dash-sidebar {
+    width: 52px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 12px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .dash-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text3);
+  }
+  .dash-icon.active { background: var(--amber-soft); color: var(--amber); }
+  .dash-icon:hover { background: var(--bg3); color: var(--text); }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .kpi-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .kpi-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 6px; }
+  .kpi-value { font-size: 20px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+  .kpi-sub { font-size: 11px; color: var(--green); margin-top: 3px; }
+  .mini-chart {
+    height: 80px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .chart-bar-row { display: flex; align-items: flex-end; gap: 4px; height: 50px; }
+  .cbar {
+    flex: 1;
+    background: rgba(245,158,11,0.25);
+    border-radius: 3px 3px 0 0;
+    min-height: 4px;
+  }
+  .cbar.active { background: var(--amber); }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+  .tab {
+    padding: 8px 16px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s;
+  }
+  .tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+  .tab:hover { color: var(--text); }
+
+  /* ── CHECKLIST ── */
+  .checklist { list-style: none; }
+  .checklist li {
+    display: flex;
+    gap: 10px;
+    padding: 7px 0;
+    font-size: 13.5px;
+    color: var(--text2);
+    border-bottom: 1px solid rgba(42,47,62,0.5);
+    align-items: flex-start;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .check-done { color: var(--green); flex-shrink: 0; margin-top: 2px; }
+  .check-warn { color: var(--amber); flex-shrink: 0; margin-top: 2px; }
+  .check-todo { color: var(--text3); flex-shrink: 0; margin-top: 2px; }
+
+  /* ── TIMELINE ── */
+  .timeline { position: relative; padding-left: 28px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 5px; top: 8px; bottom: 8px;
+    width: 1px;
+    background: var(--border2);
+  }
+  .tl-item { position: relative; margin-bottom: 24px; }
+  .tl-dot {
+    position: absolute;
+    left: -28px; top: 4px;
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: var(--amber);
+    border: 2px solid var(--bg);
+  }
+  .tl-dot.dim { background: var(--border2); }
+  .tl-title { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 3px; }
+  .tl-body { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .tl-tag { display: inline-block; font-size: 11px; color: var(--text3); background: var(--bg3); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; margin-bottom: 4px; }
+
+  /* ── STACK CARD ── */
+  .stack-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+  .stack-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .stack-name { font-weight: 600; font-size: 14.5px; color: var(--text); margin-bottom: 3px; }
+  .stack-desc { font-size: 13px; color: var(--text2); line-height: 1.5; }
+  .stack-why { font-size: 12px; color: var(--green); margin-top: 4px; }
+
+  /* ── ENV VAR ── */
+  .env-block {
+    background: #0a0c10;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 2;
+  }
+  .env-key { color: #93c5fd; }
+  .env-val { color: #86efac; }
+  .env-cm { color: var(--text3); }
+
+  /* ── PRIORITY MATRIX ── */
+  .priority-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .priority-item:last-child { border-bottom: none; }
+  .priority-rank {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--amber);
+    min-width: 28px;
+    font-family: var(--mono);
+  }
+  .priority-content { flex: 1; }
+  .priority-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .priority-note { font-size: 12.5px; color: var(--text2); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .section { padding: 40px 28px; }
+    .hero { padding: 40px 28px; }
+    .grid-2, .grid-3, .grid-4, .kpi-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  /* ── PRINT ── */
+  @media print {
+    .sidebar { display: none; }
+    .section { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">🏍 Rais Motors</div>
+    <div class="sub">Modernization Blueprint</div>
+  </div>
+
+  <div class="nav-section">Analysis</div>
+  <a class="nav-link active" href="#analysis"><span class="nav-dot"></span>Project Analysis</a>
+  <a class="nav-link" href="#security"><span class="nav-dot"></span>Security Issues</a>
+  <a class="nav-link" href="#database"><span class="nav-dot"></span>Database Schema</a>
+
+  <div class="nav-section">Redesign</div>
+  <a class="nav-link" href="#architecture"><span class="nav-dot"></span>New Architecture</a>
+  <a class="nav-link" href="#techstack"><span class="nav-dot"></span>Tech Stack</a>
+  <a class="nav-link" href="#uiux"><span class="nav-dot"></span>UI/UX Redesign</a>
+
+  <div class="nav-section">Features</div>
+  <a class="nav-link" href="#features"><span class="nav-dot"></span>New Features</a>
+  <a class="nav-link" href="#code"><span class="nav-dot"></span>Key Code Upgrades</a>
+
+  <div class="nav-section">Deploy</div>
+  <a class="nav-link" href="#deployment"><span class="nav-dot"></span>Deployment Guide</a>
+  <a class="nav-link" href="#migration"><span class="nav-dot"></span>Migration Plan</a>
+  <a class="nav-link" href="#checklist"><span class="nav-dot"></span>Final Checklist</a>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- HERO -->
+<div class="hero" id="top">
+  <div class="hero-badge">
+    <span>●</span> Full System Audit
+  </div>
+  <h1>Rais Motors<br><span>Modernization Blueprint</span></h1>
+  <p class="subtitle">Complete analysis of your existing CodeIgniter system and a step-by-step plan to transform it into a modern, secure, mobile-ready showroom management platform — without losing a single record.</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="val">1,451+</div>
+      <div class="lbl">Cash Sales Records</div>
+    </div>
+    <div class="hero-stat">
+      <div class="val">1,347</div>
+      <div class="lbl">Customer Records</div>
+    </div>
+    <div class="hero-stat">
+      <div class="val">30</div>
+      <div class="lbl">Database Tables</div>
+    </div>
+    <div class="hero-stat">
+      <div class="val">60+</div>
+      <div class="lbl">Controller Methods</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- SECTION 1: PROJECT ANALYSIS -->
+<!-- ─────────────────────────────────────────── -->
+<section class="section" id="analysis">
+  <div class="section-title"><span class="num">1</span> Current Project Analysis</div>
+  <p class="section-desc">A full audit of your deployed CodeIgniter application on Hostinger — covering architecture, structure, and existing capabilities.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🏗 Current Architecture</div>
+      <div class="card-body">
+        <p>Your system is built on <strong style="color:var(--amber)">CodeIgniter 3.x</strong>, a PHP MVC framework. The entire application runs from a single controller file with all logic, sessions, and redirects handled server-side.</p>
+        <br>
+        <p>Frontend uses an older <strong style="color:var(--amber)">AdminLTE</strong> template with Bootstrap 3 — functional but dated and not mobile-optimized.</p>
+        <br>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+          <span class="badge badge-amber">CodeIgniter 3</span>
+          <span class="badge badge-amber">PHP 7.x</span>
+          <span class="badge badge-blue">MariaDB 11.8</span>
+          <span class="badge badge-amber">AdminLTE 2</span>
+          <span class="badge badge-amber">Bootstrap 3</span>
+          <span class="badge badge-amber">jQuery</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📁 File Structure</div>
+      <div class="card-body">
+        <div class="code-block" style="margin:0">
+<code><span class="cm"># Current structure</span>
+public_html/
+├── application/
+│   ├── controllers/  <span class="cv">Admin.php (1,400+ lines!)</span>
+│   ├── models/       <span class="cv">Get_model.php, Adminlogin_model.php</span>
+│   └── views/admin/  <span class="cv">50+ PHP view files</span>
+├── assets/           <span class="cv">CSS, JS, vendor libraries</span>
+├── system/           <span class="cv">CodeIgniter core (do not modify)</span>
+└── index.php         <span class="cv">Entry point</span></code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin:32px 0 16px;font-size:16px;color:var(--text);font-weight:600;">Core Business Modules Found</h3>
+  <div class="grid-3">
+    <div class="card card-sm">
+      <div class="card-title">🛒 Sales Management</div>
+      <div class="card-body">Cash sales, installment sales, sale records, customer invoices, bike book register.</div>
+    </div>
+    <div class="card card-sm">
+      <div class="card-title">📦 Inventory & Stock</div>
+      <div class="card-body">Product catalog (20 models), purchase orders, stock allocation, engine/chassis tracking per unit.</div>
+    </div>
+    <div class="card card-sm">
+      <div class="card-title">👤 Customer Management</div>
+      <div class="card-body">1,347 customers with CNIC, phone, address, khata (account ledger), installment tracking.</div>
+    </div>
+    <div class="card card-sm">
+      <div class="card-title">💰 Financial Ledger</div>
+      <div class="card-body">Bank accounts, bank ledger, daily cashbook, expense tracking, borrow/lending records.</div>
+    </div>
+    <div class="card card-sm">
+      <div class="card-title">📊 Profit Reporting</div>
+      <div class="card-body">Profit per model, installment profit, cash profit, total P&L statement with date range filters.</div>
+    </div>
+    <div class="card card-sm">
+      <div class="card-title">🔔 Installment Alerts</div>
+      <div class="card-body">Installment notify table tracks upcoming payments. View overdue/pending by date range.</div>
+    </div>
+  </div>
+
+  <h3 style="margin:32px 0 16px;font-size:16px;color:var(--text);font-weight:600;">Architecture Problems Identified</h3>
+  <div class="issue-card">
+    <div class="issue-title">God Controller — Single 1,400-line Admin.php</div>
+    <div class="issue-body">All 60+ business operations are stuffed into one controller. This makes the code impossible to maintain, test, or scale. A sale of a bike involves 15+ database operations all done inline in the controller with no transaction safety.</div>
+  </div>
+  <div class="issue-card warn">
+    <div class="issue-title">No Separation of Concerns</div>
+    <div class="issue-body">Business logic (stock updates, installment calculations, ledger entries) is mixed with HTTP routing logic inside the same methods. If one step fails mid-sale, the database may be left in a corrupted half-state.</div>
+  </div>
+  <div class="issue-card warn">
+    <div class="issue-title">Inconsistent Session Checks</div>
+    <div class="issue-body">Some methods check <code style="color:var(--amber)">session->userdata('id')</code> while the constructor checks <code style="color:var(--amber)">session->userdata('admin_id')</code>. This inconsistency means some pages may be accessible without a valid session.</div>
+  </div>
+  <div class="issue-card info">
+    <div class="issue-title">No Database Transactions</div>
+    <div class="issue-body">The cash/installment sale process involves 7–10 separate INSERT/UPDATE operations. If the browser closes or PHP crashes midway, data will be inconsistent. No <code style="color:var(--blue)">$this->db->trans_start()</code> is used anywhere.</div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- SECTION 2: SECURITY -->
+<!-- ─────────────────────────────────────────── -->
+<section class="section" id="security">
+  <div class="section-title"><span class="num">2</span> Security Vulnerabilities</div>
+  <p class="section-desc">Critical security issues found in the current system that must be fixed before or during modernization.</p>
+
+  <div class="issue-card">
+    <div class="issue-title">🚨 CRITICAL: MD5 Password Hashing</div>
+    <div class="issue-body">
+      Your login system uses <code style="font-family:var(--mono);color:var(--red)">md5($password)</code> to hash passwords. MD5 was broken for security purposes over a decade ago — rainbow table attacks can crack MD5 hashes instantly. 
+      <br><br>
+      <strong style="color:var(--red)">Found in database:</strong> Admin password hash is <code style="font-family:var(--mono);font-size:12px;color:#f9a8d4">ff4c16a0eaa2de07762530224d372a9e</code> — this is a standard MD5 hash that can be cracked in seconds using free online tools.
+      <br><br>
+      <strong style="color:var(--green)">Fix:</strong> Replace with <code style="font-family:var(--mono);color:var(--green)">password_hash($password, PASSWORD_BCRYPT)</code> and verify with <code style="font-family:var(--mono);color:var(--green)">password_verify()</code>.
+    </div>
+  </div>
+
+  <div class="issue-card">
+    <div class="issue-title">🚨 CRITICAL: No CSRF Protection</div>
+    <div class="issue-body">Forms do not include CSRF tokens. An attacker could craft a malicious page that submits forms to your system on behalf of a logged-in admin (Cross-Site Request Forgery). This could create fake sales, delete records, or change settings.
+    <br><br>
+    <strong style="color:var(--green)">Fix:</strong> Enable <code style="font-family:var(--mono);color:var(--green)">$config['csrf_protection'] = TRUE;</code> in CodeIgniter config and add <code style="font-family:var(--mono);color:var(--green)">&lt;?php echo form_open('admin/adminlogin'); ?&gt;</code> to all forms.</div>
+  </div>
+
+  <div class="issue-card warn">
+    <div class="issue-title">⚠️ Raw $_GET Parameters Without Validation</div>
+    <div class="issue-body">Multiple methods use <code style="font-family:var(--mono);color:var(--amber)">$lid = $_GET['pid']</code> directly without type-casting or validation. This could expose integer overflow attacks or unexpected behavior. Example: <code style="font-family:var(--mono);font-size:11px">/admin/editproduct?pid=../../etc/passwd</code>
+    <br><br><strong style="color:var(--green)">Fix:</strong> Use <code style="font-family:var(--mono);color:var(--green)">(int)$this->input->get('pid')</code> or CI's input filtering everywhere.</div>
+  </div>
+
+  <div class="issue-card warn">
+    <div class="issue-title">⚠️ Login Error Reveals System Info</div>
+    <div class="issue-body">Failed login echoes <code style="font-family:var(--mono);color:var(--amber)">echo "error ";</code> — a raw string response with no redirect or proper error page. Error messages should never confirm specific failure reasons in production.</div>
+  </div>
+
+  <div class="issue-card info">
+    <div class="issue-title">ℹ️ No Login Rate Limiting</div>
+    <div class="issue-body">The login endpoint has no brute-force protection. An attacker can make unlimited password attempts. Fix: Add a failed-attempt counter in session/database and lock out after 5 failures.</div>
+  </div>
+
+  <div class="issue-card info">
+    <div class="issue-title">ℹ️ .sftp-config.json Exposed in Web Root</div>
+    <div class="issue-body">A file <code style="font-family:var(--mono);color:var(--blue)">sftp-config.json</code> is present in public_html and may contain server credentials. This file must be deleted immediately or blocked via .htaccess.</div>
+  </div>
+
+  <h3 style="margin:28px 0 14px;font-size:15px;color:var(--text);font-weight:600;">Quick Security Fixes (Apply Today)</h3>
+  <div class="code-block">
+<code><span class="cm">/* ── 1. application/config/config.php ── */</span>
+<span class="ck">$config</span>[<span class="cs">'csrf_protection'</span>] = <span class="cv">TRUE</span>;
+<span class="ck">$config</span>[<span class="cs">'csrf_token_name'</span>] = <span class="cs">'csrf_token'</span>;
+<span class="ck">$config</span>[<span class="cs">'csrf_expire'</span>] = <span class="cv">7200</span>;
+<span class="ck">$config</span>[<span class="cs">'csrf_regenerate'</span>] = <span class="cv">TRUE</span>;
+
+<span class="cm">/* ── 2. Replace MD5 login check ── */</span>
+<span class="cm">// OLD (INSECURE):</span>
+<span class="ck">$adminpassword</span> = <span class="cf">md5</span>(<span class="ck">$this</span>->input->post(<span class="cs">'password'</span>));
+
+<span class="cm">// NEW (SECURE):</span>
+<span class="ck">$plainPassword</span> = <span class="ck">$this</span>->input->post(<span class="cs">'password'</span>);
+<span class="ck">$storedHash</span> = <span class="ck">$this</span>->dm1-><span class="cf">getAdminHash</span>(<span class="ck">$email</span>);
+<span class="cf">if</span> (<span class="cf">password_verify</span>(<span class="ck">$plainPassword</span>, <span class="ck">$storedHash</span>)) {
+    <span class="cm">// login success</span>
+}
+
+<span class="cm">/* ── 3. Fix session check in constructor ── */</span>
+<span class="cm">// Use ONE consistent session key everywhere</span>
+<span class="cf">if</span>( <span class="ck">$this</span>->session->userdata(<span class="cs">'admin_id'</span>) ) {
+    <span class="cf">redirect</span>(<span class="cs">'admin/dash'</span>);
+}
+
+<span class="cm">/* ── 4. Sanitize GET params ── */</span>
+<span class="ck">$lid</span> = (<span class="cf">int</span>)<span class="ck">$this</span>->input->get(<span class="cs">'pid'</span>);
+<span class="cf">if</span> (<span class="ck">$lid</span> <= <span class="cv">0</span>) { <span class="cf">show_404</span>(); }
+
+<span class="cm">/* ── 5. Update admin password to bcrypt ── */</span>
+<span class="cm">-- Run once in MySQL:</span>
+UPDATE tbl_admin SET admin_pass = <span class="cs">'$2y$12$...'</span>
+WHERE admin_id = <span class="cv">1</span>;</code>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- SECTION 3: DATABASE -->
+<!-- ─────────────────────────────────────────── -->
+<section class="section" id="database">
+  <div class="section-title"><span class="num">3</span> Database Schema Overview</div>
+  <p class="section-desc">Your MariaDB database contains 30 tables with years of live business data. All tables must be preserved exactly as-is. Here's the key schema mapped for the redesign.</p>
+
+  <div style="margin-bottom:16px;padding:14px 18px;background:var(--green-soft);border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius);font-size:13.5px;color:#6ee7b7;">
+    ✅ <strong>Data Safety Guarantee:</strong> No schema changes are required for the UI modernization. All changes are purely to the presentation layer and PHP security layer. Your existing data is 100% safe.
+  </div>
+
+  <div class="grid-2" style="margin-bottom:20px;">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:10px;">Core Business Tables</div>
+      <table class="data-table">
+        <thead><tr><th>Table</th><th>Key Data</th><th>Records (approx)</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">tbl_salecash</td><td style="font-size:12px;color:var(--text2)">Cash sales with engine/chassis</td><td><span class="badge badge-amber">1,451+</span></td></tr>
+          <tr><td class="mono">tbl_saleinstall</td><td style="font-size:12px;color:var(--text2)">Installment sales</td><td><span class="badge badge-amber">High</span></td></tr>
+          <tr><td class="mono">tbl_customer</td><td style="font-size:12px;color:var(--text2)">Customer profiles, balance</td><td><span class="badge badge-amber">1,347</span></td></tr>
+          <tr><td class="mono">tbl_product</td><td style="font-size:12px;color:var(--text2)">Bike models, stock qty</td><td><span class="badge badge-green">~20</span></td></tr>
+          <tr><td class="mono">tbl_install</td><td style="font-size:12px;color:var(--text2)">Monthly installments</td><td><span class="badge badge-amber">High</span></td></tr>
+          <tr><td class="mono">tbl_purchase</td><td style="font-size:12px;color:var(--text2)">Purchase orders from company</td><td><span class="badge badge-amber">High</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:10px;">Financial Tables</div>
+      <table class="data-table">
+        <thead><tr><th>Table</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">tbl_cash_khata</td><td style="font-size:12px;color:var(--text2)">Customer account ledger (debit/credit)</td></tr>
+          <tr><td class="mono">tbl_bank</td><td style="font-size:12px;color:var(--text2)">Bank accounts with balances</td></tr>
+          <tr><td class="mono">tbl_bank_ledger</td><td style="font-size:12px;color:var(--text2)">All bank transactions</td></tr>
+          <tr><td class="mono">tbl_daily_book</td><td style="font-size:12px;color:var(--text2)">Daily cash register</td></tr>
+          <tr><td class="mono">tbl_expence</td><td style="font-size:12px;color:var(--text2)">Individual expense entries</td></tr>
+          <tr><td class="mono">tbl_expense_detail</td><td style="font-size:12px;color:var(--text2)">Expense summaries by date</td></tr>
+          <tr><td class="mono">tbl_profit_margin</td><td style="font-size:12px;color:var(--text2)">Profit tracking per bike model</td></tr>
+          <tr><td class="mono">tbl_borrow</td><td style="font-size:12px;color:var(--text2)">Personal loans from friends</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h3 style="margin:0 0 14px;font-size:15px;color:var(--text);font-weight:600;">Key Table Structures (for reference)</h3>
+  <div class="grid-3">
+    <div class="db-card">
+      <div class="db-card-header">tbl_customer</div>
+      <div class="db-card-row"><span class="db-field">cus_id</span><span class="db-type">int(11)</span><span class="db-key">PK</span></div>
+      <div class="db-card-row"><span class="db-field">name</span><span class="db-type">varchar(255)</span></div>
+      <div class="db-card-row"><span class="db-field">fname</span><span class="db-type">varchar(200)</span></div>
+      <div class="db-card-row"><span class="db-field">phone</span><span class="db-type">varchar(200)</span></div>
+      <div class="db-card-row"><span class="db-field">cnic</span><span class="db-type">varchar(200)</span></div>
+      <div class="db-card-row"><span class="db-field">address</span><span class="db-type">varchar(200)</span></div>
+      <div class="db-card-row"><span class="db-field">balance</span><span class="db-type">int(11)</span></div>
+      <div class="db-card-row"><span class="db-field">khatanum</span><span class="db-type">varchar(255)</span></div>
+    </div>
+    <div class="db-card">
+      <div class="db-card-header">tbl_salecash</div>
+      <div class="db-card-row"><span class="db-field">saleinfo_id</span><span class="db-type">int(11)</span><span class="db-key">PK</span></div>
+      <div class="db-card-row"><span class="db-field">cus_name</span><span class="db-type">varchar(45)</span></div>
+      <div class="db-card-row"><span class="db-field">model</span><span class="db-type">varchar(45)</span></div>
+      <div class="db-card-row"><span class="db-field">price</span><span class="db-type">varchar(45)</span></div>
+      <div class="db-card-row"><span class="db-field">engine_no</span><span class="db-type">varchar(11)</span></div>
+      <div class="db-card-row"><span class="db-field">chase_no</span><span class="db-type">varchar(45)</span></div>
+      <div class="db-card-row"><span class="db-field">sale_date</span><span class="db-type">varchar(45)</span></div>
+      <div class="db-card-row"><span class="db-field">after_dis_pay</span><span class="db-type">bigint(20)</span></div>
+      <div class="db-card-row"><span class="db-field">profit</span><span class="db-type">varchar(255)</span></div>
+    </div>
+    <div class="db-card">
+      <div class="db-card-header">tbl_saleinstall</div>
+      <div class="db-card-row"><span class="db-field">saleinfo_id</span><span class="db-type">int(11)</span><span class="db-key">PK</span></div>
+      <div class="db-card-row"><span class="db-field">cus_name</span><span class="db-type">varchar(45)</span></div>
+      <div class="db-card-row"><span class="db-field">model</span><span class="db-type">varchar(45)</span></div>
+      <div class="db-card-row"><span class="db-field">after_dis_pay</span><span class="db-type">bigint(20)</span></div>
+      <div class="db-card-row"><span class="db-field">down_pay</span><span class="db-type">varchar(255)</span></div>
+      <div class="db-card-row"><span class="db-field">after_down_pay</span><span class="db-type">varchar(200)</span></div>
+      <div class="db-card-row"><span class="db-field">total_install</span><span class="db-type">varchar(100)</span></div>
+      <div class="db-card-row"><span class="db-field">install_per_month</span><span class="db-type">varchar(100)</span></div>
+      <div class="db-card-row"><span class="db-field">profit</span><span class="db-type">varchar(255)</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- SECTION 4: ARCHITECTURE -->
+<!-- ─────────────────────────────────────────── -->
+<section class="section" id="architecture">
+  <div class="section-title"><span class="num">4</span> New System Architecture</div>
+  <p class="section-desc">The recommended approach is a pragmatic upgrade: keep your working PHP/MySQL backend on Hostinger, but restructure it for clarity, security, and a fully modern frontend.</p>
+
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;margin-bottom:28px;">
+
+    <!-- Current vs New comparison -->
+    <div class="grid-2" style="gap:32px;">
+      <div>
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--red);font-weight:600;margin-bottom:16px;">❌ Current Structure</div>
+        <div class="arch-box" style="margin-bottom:8px;border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.05);color:#f87171;">Browser (Bootstrap 3 + jQuery)</div>
+        <div class="arch-arrow">↕</div>
+        <div class="arch-box" style="margin-bottom:8px;border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.05);color:#f87171;">Admin.php — 1 Controller, 60+ Methods</div>
+        <div class="arch-arrow">↕</div>
+        <div class="arch-box" style="margin-bottom:8px;border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.05);color:#f87171;">Get_model.php — 1 Giant Model</div>
+        <div class="arch-arrow">↕</div>
+        <div class="arch-box" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.05);color:#f87171;">MariaDB Database</div>
+      </div>
+
+      <div>
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--green);font-weight:600;margin-bottom:16px;">✅ New Structure (CodeIgniter 4)</div>
+        <div class="arch-box new-feat" style="margin-bottom:8px;">Modern HTML5 + Tailwind CSS + Chart.js</div>
+        <div class="arch-arrow">↕</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+          <div class="arch-box new-feat" style="font-size:11px;">Sales Controller</div>
+          <div class="arch-box new-feat" style="font-size:11px;">Stock Controller</div>
+          <div class="arch-box new-feat" style="font-size:11px;">Finance Controller</div>
+          <div class="arch-box new-feat" style="font-size:11px;">Reports Controller</div>
+        </div>
+        <div class="arch-arrow">↕</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+          <div class="arch-box new-feat" style="font-size:11px;">SaleService</div>
+          <div class="arch-box new-feat" style="font-size:11px;">StockService</div>
+        </div>
+        <div class="arch-arrow">↕</div>
+        <div class="arch-box new-feat">MariaDB (same database, untouched)</div>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin:0 0 16px;font-size:15px;color:var(--text);font-weight:600;">Recommended New Folder Structure (CodeIgniter 4)</h3>
+  <div class="code-block">
+<code>app/
+├── Controllers/
+│   ├── BaseController.php     <span class="cm">// Auth check + common setup</span>
+│   ├── Auth.php               <span class="cm">// Login, logout, change password</span>
+│   ├── Dashboard.php          <span class="cm">// KPIs, charts data</span>
+│   ├── Sales.php              <span class="cm">// Cash + installment sales</span>
+│   ├── Inventory.php          <span class="cm">// Products, stock, purchase orders</span>
+│   ├── Customers.php          <span class="cm">// Customer CRUD, khata</span>
+│   ├── Finance.php            <span class="cm">// Bank ledger, expenses, borrow</span>
+│   └── Reports.php            <span class="cm">// P&L, sale reporting, daily book</span>
+│
+├── Models/
+│   ├── CustomerModel.php
+│   ├── SaleModel.php
+│   ├── ProductModel.php
+│   ├── InstallmentModel.php
+│   ├── FinanceModel.php
+│   └── ReportModel.php
+│
+├── Services/           <span class="cm">// Business logic (NEW)</span>
+│   ├── SaleService.php        <span class="cm">// Handles full sale transaction atomically</span>
+│   └── StockService.php       <span class="cm">// Inventory updates</span>
+│
+└── Views/
+    ├── layouts/main.php       <span class="cm">// Shared sidebar + header</span>
+    ├── auth/login.php
+    ├── dashboard/index.php
+    ├── sales/
+    ├── inventory/
+    ├── customers/
+    └── reports/</code>
+  </div>
+
+  <div style="margin-top:20px;padding:16px 20px;background:var(--amber-soft);border:1px solid rgba(245,158,11,0.2);border-radius:var(--radius);">
+    <div style="font-weight:600;color:var(--amber);margin-bottom:6px;">💡 Why Stay on CodeIgniter (Not React/Next.js)?</div>
+    <div style="font-size:13.5px;color:var(--text2);line-height:1.7;">Your app is on <strong style="color:var(--text)">Hostinger shared hosting</strong> — it does not support Node.js servers. Moving to Next.js would require upgrading to a VPS plan (additional cost) and a complete rewrite. The pragmatic choice: <strong style="color:var(--amber)">upgrade to CodeIgniter 4</strong>, redesign the UI with Tailwind CSS + Chart.js, and fix all security issues. Same database. Same hosting. 80% of the benefit, 20% of the effort.</div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- SECTION 5: TECH STACK -->
+<!-- ─────────────────────────────────────────── -->
+<section class="section" id="techstack">
+  <div class="section-title"><span class="num">5</span> Recommended Tech Stack</div>
+  <p class="section-desc">A carefully chosen set of tools that work perfectly on Hostinger shared hosting and deliver a modern, professional result.</p>
+
+  <div class="stack-card">
+    <div class="stack-icon" style="background:rgba(239,68,68,0.12);">🔥</div>
+    <div>
+      <div class="stack-name">CodeIgniter 4</div>
+      <div class="stack-desc">Modern PHP MVC framework. Drop-in successor to your current CI3 — same MySQL/database patterns, but with strict PSR-4 autoloading, built-in query builder improvements, and proper dependency injection.</div>
+      <div class="stack-why">✓ Works on any PHP 7.4+ shared hosting. Zero server config needed.</div>
+    </div>
+  </div>
+
+  <div class="stack-card">
+    <div class="stack-icon" style="background:rgba(6,182,212,0.12);">🎨</div>
+    <div>
+      <div class="stack-name">Tailwind CSS (CDN) + Custom Admin Components</div>
+      <div class="stack-desc">Utility-first CSS framework via CDN — no build step required. Pair with a handful of pre-built admin components (sidebar, cards, tables) for a completely modern, mobile-first UI without touching a command line.</div>
+      <div class="stack-why">✓ Mobile responsive out of the box. No npm or build tools needed on Hostinger.</div>
+    </div>
+  </div>
+
+  <div class="stack-card">
+    <div class="stack-icon" style="background:rgba(245,158,11,0.12);">📊</div>
+    <div>
+      <div class="stack-name">Chart.js (CDN)</div>
+      <div class="stack-desc">The most popular charting library for web. Lightweight, zero dependencies, beautiful defaults. Powers your monthly revenue charts, weekly sales bar charts, and installment trend lines.</div>
+      <div class="stack-why">✓ CDN delivery. Works offline too. Responsive by default.</div>
+    </div>
+  </div>
+
+  <div class="stack-card">
+    <div class="stack-icon" style="background:rgba(59,130,246,0.12);">🖨️</div>
+    <div>
+      <div class="stack-name">jsPDF + AutoTable (already included!)</div>
+      <div class="stack-desc">You already have jsPDF in your /dist folder. Use it for professional PDF invoice generation — customer name, bike details, engine/chassis numbers, price breakdown, installment schedule.</div>
+      <div class="stack-why">✓ Already in your codebase. Just wire it to the new UI properly.</div>
+    </div>
+  </div>
+
+  <div class="stack-card">
+    <div class="stack-icon" style="background:rgba(16,185,129,0.12);">📱</div>
+    <div>
+      <div class="stack-name">Alpine.js (CDN)</div>
+      <div class="stack-desc">Tiny (15kb) JavaScript framework for interactive UI components — dropdowns, modals, dynamic forms — without the complexity of React or Vue. Perfect for PHP-rendered pages that need a little interactivity.</div>
+      <div class="stack-why">✓ Zero build step. Works inline in PHP views. Replaces jQuery spaghetti.</div>
+    </div>
+  </div>
+
+  <div class="stack-card">
+    <div class="stack-icon" style="background:rgba(139,92,246,0.12);">🔒</div>
+    <div>
+      <div class="stack-name">PHP bcrypt + CI4 Shield (Auth Library)</div>
+      <div class="stack-desc">CodeIgniter 4 has an official auth library called Shield — handles sessions, password hashing with bcrypt, login throttling, and "remember me" functionality. Replace your MD5 system completely.</div>
+      <div class="stack-why">✓ Official CI4 library. Production-tested. One composer install command.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- SECTION 6: UI/UX REDESIGN -->
+<!-- ─────────────────────────────────────────── -->
+<section class="section" id="uiux">
+  <div class="section-title"><span class="num">6</span> UI/UX Redesign</div>
+  <p class="section-desc">Complete visual redesign specs for all key pages. Professional, dark-themed (with light mode option), mobile-first.</p>
+
+  <!-- Login Mockup -->
+  <h3 style="font-size:15px;color:var(--text);font-weight:600;margin-bottom:16px;">🔐 Login Page</h3>
+  <div class="mockup-frame">
+    <div class="mockup-topbar">
+      <div class="dot-red"></div>
+      <div class="dot-yellow"></div>
+      <div class="dot-green"></div>
+      <div class="mockup-url">raismotors.com/login</div>
+    </div>
+    <div class="mockup-body" style="background:var(--bg);padding:40px;">
+      <div class="login-mockup">
+        <div class="login-logo">
+          <div class="icon">🏍</div>
+          <div class="title">Rais Motors</div>
+          <div class="sub">Showroom Management System</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input class="form-input" type="email" value="rais@gmail.com" readonly>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" value="••••••••••" readonly>
+        </div>
+        <button class="btn-primary">Sign In to Dashboard</button>
+        <p style="text-align:center;font-size:12px;color:var(--text3);margin-top:14px;">Forgot password? Contact admin.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard Mockup -->
+  <h3 style="font-size:15px;color:var(--text);font-weight:600;margin:32px 0 16px;">📊 Dashboard — KPI Overview</h3>
+  <div class="mockup-frame">
+    <div class="mockup-topbar">
+      <div class="dot-red"></div><div class="dot-yellow"></div><div class="dot-green"></div>
+      <div class="mockup-url">raismotors.com/admin/dashboard</div>
+    </div>
+    <div style="display:flex;height:400px;overflow:hidden;">
+      <!-- Mini sidebar -->
+      <div class="dash-sidebar">
+        <div class="dash-icon active">📊</div>
+        <div class="dash-icon">🛒</div>
+        <div class="dash-icon">📦</div>
+        <div class="dash-icon">👤</div>
+        <div class="dash-icon">💰</div>
+        <div class="dash-icon">📈</div>
+        <div style="flex:1;"></div>
+        <div class="dash-icon">⚙️</div>
+        <div class="dash-icon">🚪</div>
+      </div>
+      <!-- Dashboard content -->
+      <div style="flex:1;overflow-y:auto;padding:16px;background:var(--bg);">
+        <!-- Top header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div>
+            <div style="font-size:16px;font-weight:600;color:#fff;">Good Morning, Rais 👋</div>
+            <div style="font-size:12px;color:var(--text3);">Saturday, 19 April 2026</div>
+          </div>
+          <div style="background:var(--amber);color:#000;font-size:11px;font-weight:700;padding:5px 12px;border-radius:6px;">+ New Sale</div>
+        </div>
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Total Sales</div>
+            <div class="kpi-value">1,451</div>
+            <div class="kpi-sub">↑ 12 this month</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">In Market (Credit)</div>
+            <div class="kpi-value" style="color:var(--amber);">PKR</div>
+            <div class="kpi-sub" style="color:var(--text3);">Installment balance</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Today's Expense</div>
+            <div class="kpi-value" style="font-size:15px;">Tracked</div>
+            <div class="kpi-sub" style="color:var(--text3);">Daily cashbook</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Stock Available</div>
+            <div class="kpi-value" style="color:var(--green);">Live</div>
+            <div class="kpi-sub" style="color:var(--text3);">Per model</div>
+          </div>
+        </div>
+        <!-- Mini chart -->
+        <div class="mini-chart">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Monthly Sales (Units)</div>
+          <div class="chart-bar-row">
+            <div class="cbar" style="height:30%"></div>
+            <div class="cbar" style="height:55%"></div>
+            <div class="cbar" style="height:45%"></div>
+            <div class="cbar" style="height:70%"></div>
+            <div class="cbar" style="height:60%"></div>
+            <div class="cbar" style="height:85%"></div>
+            <div class="cbar active" style="height:95%"></div>
+            <div class="cbar" style="height:75%"></div>
+            <div class="cbar" style="height:65%"></div>
+            <div class="cbar" style="height:80%"></div>
+            <div class="cbar" style="height:50%"></div>
+            <div class="cbar" style="height:90%"></div>
+          </div>
+        </div>
+        <!-- Recent sales table preview -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.7px;">Recent Sales</div>
+          <div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;font-size:12px;color:var(--text2);">
+            <span>Ahmad Khan — Honda 125</span><span class="badge badge-green">Cash</span>
+          </div>
+          <div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;font-size:12px;color:var(--text2);">
+            <span>Ali Raza — Yamaha YBR</span><span class="badge badge-amber">Install</span>
+          </div>
+          <div style="padding:8px 14px;display:flex;justify-content:space-between;font-size:12px;color:var(--text2);">
+            <span>Usman Tariq — Honda CD70</span><span class="badge badge-green">Cash</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Design Principles -->
+  <h3 style="font-size:15px;color:var(--text);font-weight:600;margin:32px 0 16px;">Design System Principles</h3>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🎨 Color Palette</div>
+      <div class="card-body">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+          <div style="text-align:center">
+            <div style="width:40px;height:40px;border-radius:8px;background:#0d0f13;border:1px solid var(--border);margin-bottom:4px;"></div>
+            <div style="font-size:10px;color:var(--text3)">Background</div>
+          </div>
+          <div style="text-align:center">
+            <div style="width:40px;height:40px;border-radius:8px;background:#f59e0b;margin-bottom:4px;"></div>
+            <div style="font-size:10px;color:var(--text3)">Amber (Primary)</div>
+          </div>
+          <div style="width:40px;text-align:center">
+            <div style="width:40px;height:40px;border-radius:8px;background:#10b981;margin-bottom:4px;"></div>
+            <div style="font-size:10px;color:var(--text3)">Green (Success)</div>
+          </div>
+          <div style="width:40px;text-align:center">
+            <div style="width:40px;height:40px;border-radius:8px;background:#ef4444;margin-bottom:4px;"></div>
+            <div style="font-size:10px;color:var(--text3)">Red (Danger)</div>
+          </div>
+          <div style="width:40px;text-align:center">
+            <div style="width:40px;height:40px;border-radius:8px;background:#3b82f6;margin-bottom:4px;"></div>
+            <div style="font-size:10px;color:var(--text3)">Blue (Info)</div>
+          </div>
+        </div>
+        <div style="font-size:13px;color:var(--text2);">Dark theme with amber brand color. Instantly recognizable as a serious business tool, not a toy. Matches the serious nature of financial records.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📱 Mobile-First Breakpoints</div>
+      <div class="card-body">
+        <div style="font-size:13px;color:var(--text2);line-height:1.8;">
+          <div style="margin-bottom:8px;"><span style="color:var(--amber);font-weight:600;font-family:var(--mono);">sm: 640px</span> — Single column, collapsible sidebar, touch-friendly buttons (44px min)</div>
+          <div style="margin-bottom:8px;"><span style="color:var(--amber);font-weight:600;font-family:var(--mono);">md: 768px</span> — 2-column grids, inline sidebar flyout</div>
+          <div style="margin-bottom:8px;"><span style="color:var(--amber);font-weight:600;font-family:var(--mono);">lg: 1024px</span> — Full sidebar, 4-column KPI grid</div>
+          <div><span style="color:var(--amber);font-weight:600;font-family:var(--mono);">xl: 1280px</span> — Wide charts, full tables with all columns visible</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- SECTION 7: NEW FEATURES -->
+<!-- ─────────────────────────────────────────── -->
+<section class="section" id="features">
+  <div class="section-title"><span class="num">7</span> New Features to Add</div>
+  <p class="section-desc">Enhancements that turn your basic record system into a full management platform.</p>
+
+  <div class="grid-2">
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title">📈 Analytics Dashboard <span class="badge badge-green" style="margin-left:6px;">New</span></div>
+        <div class="card-body">
+          <ul style="list-style:none;font-size:13px;color:var(--text2);line-height:2;">
+            <li>📊 Monthly sales chart (Cash vs Installment)</li>
+            <li>📊 Weekly performance bar chart</li>
+            <li>📊 Best-selling bike models pie chart</li>
+            <li>📊 Revenue trend line (last 12 months)</li>
+            <li>📊 Pending installments overview</li>
+            <li>📊 Profit margin by model</li>
+          </ul>
+          <div class="code-block" style="margin-top:10px">
+<code><span class="cm">// Chart.js example for monthly sales</span>
+<span class="ck">new</span> <span class="cf">Chart</span>(ctx, {
+  type: <span class="cs">'bar'</span>,
+  data: { labels: months, datasets: [{
+    label: <span class="cs">'Cash Sales'</span>,
+    data: cashData,
+    backgroundColor: <span class="cs">'#f59e0b'</span>
+  }, {
+    label: <span class="cs">'Installment Sales'</span>,
+    data: installData,
+    backgroundColor: <span class="cs">'#3b82f6'</span>
+  }]}
+});</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔔 Smart Notifications <span class="badge badge-green" style="margin-left:6px;">New</span></div>
+        <div class="card-body" style="font-size:13.5px;color:var(--text2);">
+          <p>Your <code style="font-family:var(--mono);color:var(--amber)">tbl_installment_notify</code> table is already collecting overdue installment data. Wire it to a <strong style="color:var(--text)">notification bell</strong> in the header:</p>
+          <br>
+          <ul style="list-style:none;line-height:2;">
+            <li>🔴 Overdue installments this month</li>
+            <li>🟡 Upcoming installments in next 7 days</li>
+            <li>🟢 Installments paid today</li>
+          </ul>
+          <p style="margin-top:8px;">Badge shows count. Click opens filtered list. No SMS needed — just a prominent on-screen alert.</p>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title">🧾 PDF Invoice Generator <span class="badge badge-amber" style="margin-left:6px;">Upgrade</span></div>
+        <div class="card-body">
+          <p style="font-size:13.5px;color:var(--text2);margin-bottom:12px;">You already have jsPDF. Build proper invoice PDFs with:</p>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px;color:var(--text2);">
+            <div style="font-weight:700;color:var(--amber);font-size:14px;margin-bottom:8px;">RAIS MOTORS</div>
+            <div style="color:var(--text3);margin-bottom:6px;">Sale Receipt / کیش رسید</div>
+            <div style="font-size:11px;border-top:1px solid var(--border);padding-top:8px;">
+              <div>Customer: <span style="color:var(--text)">Ahmad S/O Muhammad</span></div>
+              <div>CNIC: <span style="color:var(--text)">31303-XXXXXXX-X</span></div>
+              <div>Phone: <span style="color:var(--text)">0300-XXXXXXX</span></div>
+              <div style="border-top:1px dashed var(--border);margin:6px 0;"></div>
+              <div>Model: <span style="color:var(--amber)">Honda CD70 2025</span></div>
+              <div>Engine: XXXXX | Chassis: XXXXX</div>
+              <div>Sale Price: <span style="color:var(--green)">PKR 125,000/-</span></div>
+              <div>Discount: PKR 2,000/-</div>
+              <div style="font-weight:700;color:var(--text);">Total Paid: PKR 123,000/-</div>
+              <div style="border-top:1px dashed var(--border);margin:6px 0;"></div>
+              <div>Payment: Cash ✓ | Date: 19-04-2026</div>
+            </div>
+          </div>
+          <div class="code-block" style="margin-top:10px">
+<code><span class="cm">// Generate PDF on button click</span>
+<span class="ck">function</span> <span class="cf">generateInvoice</span>(saleId) {
+  <span class="ck">const</span> doc = <span class="ck">new</span> <span class="cf">jsPDF</span>();
+  doc.<span class="cf">setFont</span>(<span class="cs">'helvetica'</span>, <span class="cs">'bold'</span>);
+  doc.<span class="cf">text</span>(<span class="cs">'RAIS MOTORS'</span>, <span class="cv">105</span>, <span class="cv">20</span>, {align:<span class="cs">'center'</span>});
+  <span class="cm">// ... load data via AJAX, build PDF</span>
+  doc.<span class="cf">save</span>(<span class="cs">`receipt-${saleId}.pdf`</span>);
+}</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔍 Advanced Search & Filter <span class="badge badge-green" style="margin-left:6px;">New</span></div>
+        <div class="card-body" style="font-size:13.5px;color:var(--text2);">
+          <p>All list views (customers, sales, installments) should have a live search bar:</p>
+          <div class="code-block" style="margin-top:10px">
+<code><span class="cm">// Alpine.js live search example</span>
+&lt;input <span class="cn">x-model</span>=<span class="cs">"search"</span>
+       placeholder=<span class="cs">"Search by name, CNIC, phone..."</span>&gt;
+&lt;tr <span class="cn">x-for</span>=<span class="cs">"customer in filteredCustomers"</span>&gt;
+  <span class="cm">&lt;!-- each customer row --&gt;</span>
+&lt;/tr&gt;
+
+<span class="ck">get</span> <span class="cf">filteredCustomers</span>() {
+  <span class="ck">return</span> <span class="ck">this</span>.customers.<span class="cf">filter</span>(c =>
+    c.name.<span class="cf">includes</span>(<span class="ck">this</span>.search) ||
+    c.cnic.<span class="cf">includes</span>(<span class="ck">this</span>.search) ||
+    c.phone.<span class="cf">includes</span>(<span class="ck">this</span>.search)
+  );
+}</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- SECTION 8: KEY CODE UPGRADES -->
+<!-- ─────────────────────────────────────────── -->
+<section class="section" id="code">
+  <div class="section-title"><span class="num">8</span> Key Code Upgrades</div>
+  <p class="section-desc">The most critical code patterns to rewrite. Focus here first — these changes have the highest impact.</p>
+
+  <h3 style="font-size:15px;color:var(--text);font-weight:600;margin-bottom:14px;">1. Wrap Sale in a Database Transaction (CRITICAL)</h3>
+  <div class="code-block">
+<code><span class="cm">/* Current code (UNSAFE): 10 separate queries, no rollback */</span>
+<span class="ck">$sid</span> = <span class="ck">$this</span>->dm-><span class="cf">insertsalecash</span>(<span class="ck">$data</span>);
+<span class="ck">$this</span>->dm-><span class="cf">updateproducts</span>(<span class="ck">$id</span>, <span class="ck">$data1</span>);
+<span class="ck">$this</span>->dm-><span class="cf">updateproductsdetail</span>(<span class="ck">$pid</span>, <span class="ck">$data11</span>);
+<span class="ck">$this</span>->dm-><span class="cf">insertdailybook</span>(<span class="ck">$data2</span>);
+<span class="ck">$this</span>->dm-><span class="cf">updateprofitmargin</span>(<span class="ck">$id</span>, <span class="ck">$data3</span>);
+<span class="cm">// ... if PHP crashes here, database is broken</span>
+
+<span class="cm">/* NEW CODE (SAFE): All-or-nothing transaction */</span>
+<span class="ck">$db</span> = \<span class="cf">Config\Database</span>::<span class="cf">connect</span>();
+<span class="ck">$db</span>-><span class="cf">transStart</span>();
+
+<span class="ck">try</span> {
+  <span class="ck">$sid</span> = <span class="ck">$this</span>->saleModel-><span class="cf">insertCashSale</span>(<span class="ck">$data</span>);
+  <span class="ck">$this</span>->productModel-><span class="cf">decrementStock</span>(<span class="ck">$productId</span>);
+  <span class="ck">$this</span>->productModel-><span class="cf">markUnitSold</span>(<span class="ck">$engineNo</span>);
+  <span class="ck">$this</span>->financeModel-><span class="cf">insertDailyBook</span>(<span class="ck">$entry</span>);
+  <span class="ck">$this</span>->financeModel-><span class="cf">insertKhataEntry</span>(<span class="ck">$khata</span>);
+
+  <span class="ck">$db</span>-><span class="cf">transComplete</span>();
+  <span class="cf">return redirect</span>()-><span class="cf">to</span>(<span class="cs">'sales/cash?success=1'</span>);
+
+} <span class="ck">catch</span> (\<span class="cf">Exception</span> <span class="ck">$e</span>) {
+  <span class="ck">$db</span>-><span class="cf">transRollback</span>();
+  <span class="cf">log_message</span>(<span class="cs">'error'</span>, <span class="cs">'Sale failed: '</span> . <span class="ck">$e</span>-><span class="cf">getMessage</span>());
+  <span class="cf">return redirect</span>()-><span class="cf">back</span>()-><span class="cf">with</span>(<span class="cs">'error'</span>, <span class="cs">'Sale could not be completed.'</span>);
+}</code>
+  </div>
+
+  <h3 style="font-size:15px;color:var(--text);font-weight:600;margin:24px 0 14px;">2. Shared Layout Template (Stop Copy-Pasting HTML)</h3>
+  <div class="code-block">
+<code><span class="cm">&lt;!-- app/Views/layouts/main.php --&gt;</span>
+&lt;!DOCTYPE html&gt;
+&lt;html lang=<span class="cs">"en"</span>&gt;
+&lt;head&gt;
+  &lt;meta charset=<span class="cs">"UTF-8"</span>&gt;
+  &lt;meta name=<span class="cs">"viewport"</span> content=<span class="cs">"width=device-width, initial-scale=1.0"</span>&gt;
+  &lt;title&gt;<span class="cv">&lt;?= $pageTitle ?? 'Rais Motors' ?&gt;</span> — Rais Motors&lt;/title&gt;
+  &lt;script src=<span class="cs">"https://cdn.tailwindcss.com"</span>&gt;&lt;/script&gt;
+  &lt;script src=<span class="cs">"https://cdn.jsdelivr.net/npm/alpinejs@3"</span> defer&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body class=<span class="cs">"bg-gray-950 text-gray-100"</span>&gt;
+  &lt;?= <span class="ck">$this</span>-><span class="cf">include</span>(<span class="cs">'partials/sidebar'</span>) ?&gt;
+  &lt;main&gt;
+    &lt;?= <span class="ck">$this</span>-><span class="cf">renderSection</span>(<span class="cs">'content'</span>) ?&gt;
+  &lt;/main&gt;
+&lt;/body&gt;
+
+<span class="cm">&lt;!-- app/Views/dashboard/index.php --&gt;</span>
+&lt;?= <span class="ck">$this</span>-><span class="cf">extend</span>(<span class="cs">'layouts/main'</span>) ?&gt;
+&lt;?= <span class="ck">$this</span>-><span class="cf">section</span>(<span class="cs">'content'</span>) ?&gt;
+  &lt;h1&gt;Dashboard&lt;/h1&gt;
+  <span class="cm">&lt;!-- dashboard-specific content only --&gt;</span>
+&lt;?= <span class="ck">$this</span>-><span class="cf">endSection</span>() ?&gt;</code>
+  </div>
+
+  <h3 style="font-size:15px;color:var(--text);font-weight:600;margin:24px 0 14px;">3. Auth Middleware (Protect Every Route)</h3>
+  <div class="code-block">
+<code><span class="cm">// app/Filters/AuthFilter.php</span>
+<span class="ck">class</span> <span class="cf">AuthFilter</span> <span class="ck">implements</span> FilterInterface {
+  <span class="ck">public function</span> <span class="cf">before</span>(<span class="cn">RequestInterface</span> <span class="ck">$request</span>, ?array <span class="ck">$arguments</span> = null) {
+    <span class="ck">if</span> (!session()-><span class="cf">get</span>(<span class="cs">'admin_id'</span>)) {
+      <span class="ck">return redirect</span>()-><span class="cf">to</span>(<span class="cs">'/login'</span>)-><span class="cf">with</span>(<span class="cs">'error'</span>, <span class="cs">'Please login first.'</span>);
+    }
+  }
+}
+
+<span class="cm">// app/Config/Routes.php — protect everything under /admin/*</span>
+<span class="ck">$routes</span>-><span class="cf">group</span>(<span class="cs">'admin'</span>, [<span class="cs">'filter'</span> => <span class="cs">'auth'</span>], <span class="ck">function</span>(<span class="ck">$routes</span>) {
+  <span class="ck">$routes</span>-><span class="cf">get</span>(<span class="cs">'dashboard'</span>, <span class="cs">'Dashboard::index'</span>);
+  <span class="ck">$routes</span>-><span class="cf">get</span>(<span class="cs">'sales'</span>, <span class="cs">'Sales::index'</span>);
+  <span class="ck">$routes</span>-><span class="cf">post</span>(<span class="cs">'sales/cash'</span>, <span class="cs">'Sales::storeCash'</span>);
+  <span class="cm">// ... all protected routes</span>
+});</code>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- SECTION 9: DEPLOYMENT -->
+<!-- ─────────────────────────────────────────── -->
+<section class="section" id="deployment">
+  <div class="section-title"><span class="num">9</span> Deployment Strategy (Hostinger)</div>
+  <p class="section-desc">Since you are on Hostinger shared hosting, the deployment stays on the same server. Here is the exact step-by-step process.</p>
+
+  <div style="margin-bottom:24px;padding:14px 18px;background:var(--amber-soft);border:1px solid rgba(245,158,11,0.2);border-radius:var(--radius);font-size:13.5px;color:#fde68a;">
+    ⚠️ <strong>Important:</strong> Never deploy directly to your live site. Always test on a staging copy first. We will create a <code style="font-family:var(--mono)">/staging</code> subfolder to test the new version alongside your live system.
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-content">
+        <div class="step-title">Backup Everything (Before Starting)</div>
+        <div class="step-body">
+          Export database from Hostinger phpMyAdmin → Export → SQL format. Download entire public_html via FileManager or SFTP. Store safely on your local computer. Your app also has a <code style="font-family:var(--mono);color:var(--amber)">database_backup()</code> function — run it once now.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-content">
+        <div class="step-title">Create Staging Environment</div>
+        <div class="step-body">
+          In Hostinger File Manager, create <code style="font-family:var(--mono);color:var(--amber)">public_html/v2/</code> folder. Upload the new CodeIgniter 4 project there. Create a <code style="font-family:var(--mono);color:var(--amber)">v2_test</code> database in Hostinger MySQL Manager. Import your existing SQL dump into this test database. Test everything at <code style="font-family:var(--mono);color:var(--blue)">yourdomain.com/v2/</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-content">
+        <div class="step-title">Configure Environment Variables</div>
+        <div class="step-body">
+          Create <code style="font-family:var(--mono);color:var(--amber)">.env</code> file in your CI4 project root (this file must NEVER be committed to GitHub or uploaded publicly):
+          <div class="env-block" style="margin-top:10px">
+            <span class="env-cm"># Database</span><br>
+            <span class="env-key">database.default.hostname</span> = <span class="env-val">localhost</span><br>
+            <span class="env-key">database.default.database</span> = <span class="env-val">u660371462_Rais</span><br>
+            <span class="env-key">database.default.username</span> = <span class="env-val">u660371462_rais</span><br>
+            <span class="env-key">database.default.password</span> = <span class="env-val">YOUR_DB_PASSWORD</span><br>
+            <span class="env-key">database.default.DBDriver</span> = <span class="env-val">MySQLi</span><br>
+            <br>
+            <span class="env-cm"># App</span><br>
+            <span class="env-key">app.baseURL</span> = <span class="env-val">'https://yourdomain.com/'</span><br>
+            <span class="env-key">CI_ENVIRONMENT</span> = <span class="env-val">production</span><br>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-content">
+        <div class="step-title">Set Up GitHub Repository</div>
+        <div class="step-body">
+          <div class="code-block" style="margin-top:8px">
+<code><span class="cm"># On your local computer</span>
+git init rais-motors-v2
+cd rais-motors-v2
+git add .
+git commit -m <span class="cs">"Initial CodeIgniter 4 setup"</span>
+git remote add origin https://github.com/YOUR_USER/rais-motors.git
+git push -u origin main
+
+<span class="cm"># IMPORTANT: Add to .gitignore</span>
+echo <span class="cs">".env"</span> >> .gitignore
+echo <span class="cs">"writable/"</span> >> .gitignore
+echo <span class="cs">"vendor/"</span> >> .gitignore</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-content">
+        <div class="step-title">Deploy to Hostinger via Git Pull</div>
+        <div class="step-body">
+          Hostinger supports Git deployment. In Hostinger hPanel → Git → Connect your repository. Set deploy path to <code style="font-family:var(--mono);color:var(--amber)">public_html</code>. On every push to <code style="font-family:var(--mono);color:var(--amber)">main</code> branch, Hostinger auto-pulls the new files. The database is never touched by deployments — only PHP files update.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-content">
+        <div class="step-title">Go Live — Swap Traffic</div>
+        <div class="step-body">
+          When staging is fully tested: rename old <code style="font-family:var(--mono);color:var(--amber)">public_html</code> to <code style="font-family:var(--mono);color:var(--amber)">public_html_old_backup</code>. Move <code style="font-family:var(--mono);color:var(--amber)">v2</code> contents to <code style="font-family:var(--mono);color:var(--amber)">public_html</code>. Update database credentials in <code style="font-family:var(--mono);color:var(--amber)">.env</code> to point to your live database. Done — zero downtime.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- If they WANT Vercel option -->
+  <div style="margin-top:24px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+    <div style="padding:14px 18px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:14px;font-weight:600;color:var(--text);">Optional: Vercel Deployment (For Future Next.js Migration)</div>
+    <div style="padding:16px 18px;font-size:13.5px;color:var(--text2);line-height:1.75;">
+      If you later decide to rebuild in Next.js (requires upgrading Hostinger plan to VPS, ~$15/month):
+      <div class="code-block" style="margin-top:10px">
+<code>npm create next-app@latest rais-motors
+cd rais-motors
+git push origin main
+
+<span class="cm"># In Vercel dashboard:</span>
+<span class="cm"># Import GitHub repo → auto-deploys on push</span>
+<span class="cm"># Add environment variables:</span>
+DATABASE_URL=<span class="cs">"mysql://user:pass@hostinger-host/db"</span>
+NEXTAUTH_SECRET=<span class="cs">"generate-with: openssl rand -base64 32"</span>
+NEXTAUTH_URL=<span class="cs">"https://raismotors.com"</span></code>
+      </div>
+      <strong style="color:var(--amber)">Note:</strong> Vercel is free for hobby/small business. Custom domain, SSL, and auto-deploys are all free tier.
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- SECTION 10: MIGRATION PLAN -->
+<!-- ─────────────────────────────────────────── -->
+<section class="section" id="migration">
+  <div class="section-title"><span class="num">10</span> Migration Plan</div>
+  <p class="section-desc">A phased plan that lets you modernize without risking your live business. Each phase is independent and can be deployed separately.</p>
+
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-tag">Phase 1 — Week 1-2</div>
+      <div class="tl-title">🔒 Security Hardening (Do This First!)</div>
+      <div class="tl-body">Fix MD5 → bcrypt. Enable CSRF. Sanitize all GET params. Delete sftp-config.json. Fix inconsistent session checks. These changes are minimal (5-6 file edits) and can go live on the existing old UI immediately. Data is untouched.</div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-tag">Phase 2 — Week 3-5</div>
+      <div class="tl-title">🏗 CodeIgniter 4 Setup + New Architecture</div>
+      <div class="tl-body">Install CI4 fresh. Migrate all controllers to proper separated structure. Wrap all multi-step operations in database transactions. Write the shared layout template. Keep all existing SQL queries — just reorganize which file they live in. Test on staging URL.</div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-tag">Phase 3 — Week 6-8</div>
+      <div class="tl-title">🎨 Modern UI Implementation</div>
+      <div class="tl-body">Replace all views with Tailwind CSS templates. New login page. New dashboard with KPI cards. Modernize all list/form views (customers, sales, inventory). Mobile-responsive sidebar. All existing features preserved, just redesigned.</div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-tag">Phase 4 — Week 9-10</div>
+      <div class="tl-title">📈 Analytics + PDF Generation</div>
+      <div class="tl-body">Add Chart.js charts to dashboard (monthly revenue, weekly sales, best sellers). Wire jsPDF to sale views for printable receipts. Add installment notification badge. Add live search to all list pages.</div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot dim"></div>
+      <div class="tl-tag">Phase 5 — Week 11+ (Optional)</div>
+      <div class="tl-title">📱 PWA / Mobile App Wrapper</div>
+      <div class="tl-body">Once the web app is fully modern, wrap it as a Progressive Web App (PWA) — one line in the manifest file — so it installs like a native app on Android/iOS. Users can tap it from their home screen and it opens full-screen without the browser bar.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- SECTION 11: FINAL CHECKLIST -->
+<!-- ─────────────────────────────────────────── -->
+<section class="section" id="checklist">
+  <div class="section-title"><span class="num">11</span> Final Deliverable Checklist</div>
+  <p class="section-desc">Track your progress through the modernization. Every item here maps to a specific section of this document.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">🔐 Security (Phase 1)</div>
+      <ul class="checklist">
+        <li><span class="check-todo">□</span>Replace MD5 with bcrypt password hashing</li>
+        <li><span class="check-todo">□</span>Enable CSRF protection in CI config</li>
+        <li><span class="check-todo">□</span>Add CSRF token to all forms</li>
+        <li><span class="check-todo">□</span>Sanitize all $_GET parameters</li>
+        <li><span class="check-todo">□</span>Fix inconsistent session key (admin_id vs id)</li>
+        <li><span class="check-todo">□</span>Delete sftp-config.json from web root</li>
+        <li><span class="check-todo">□</span>Add login rate limiting (5 attempts)</li>
+        <li><span class="check-todo">□</span>Disable PHP error display in production</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">🏗 Architecture (Phase 2)</div>
+      <ul class="checklist">
+        <li><span class="check-todo">□</span>Install CodeIgniter 4</li>
+        <li><span class="check-todo">□</span>Split Admin.php into 7 focused controllers</li>
+        <li><span class="check-todo">□</span>Create SaleService with DB transactions</li>
+        <li><span class="check-todo">□</span>Create AuthFilter middleware</li>
+        <li><span class="check-todo">□</span>Set up .env file for credentials</li>
+        <li><span class="check-todo">□</span>Create GitHub repository</li>
+        <li><span class="check-todo">□</span>Set up staging environment</li>
+        <li><span class="check-todo">□</span>Migrate all 30 SQL queries to new models</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">🎨 UI/UX (Phase 3)</div>
+      <ul class="checklist">
+        <li><span class="check-todo">□</span>New login page (Tailwind + responsive)</li>
+        <li><span class="check-todo">□</span>New shared layout template (sidebar + header)</li>
+        <li><span class="check-todo">□</span>Dashboard with KPI cards</li>
+        <li><span class="check-todo">□</span>Cash sale form (modern, mobile-friendly)</li>
+        <li><span class="check-todo">□</span>Installment sale form</li>
+        <li><span class="check-todo">□</span>Customer list with search</li>
+        <li><span class="check-todo">□</span>Inventory management views</li>
+        <li><span class="check-todo">□</span>Mobile responsive (test on phone)</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">📈 New Features (Phase 4)</div>
+      <ul class="checklist">
+        <li><span class="check-todo">□</span>Chart.js monthly sales chart</li>
+        <li><span class="check-todo">□</span>Chart.js weekly performance chart</li>
+        <li><span class="check-todo">□</span>Best-selling model chart</li>
+        <li><span class="check-todo">□</span>PDF invoice generator (cash sale)</li>
+        <li><span class="check-todo">□</span>PDF invoice generator (installment sale)</li>
+        <li><span class="check-todo">□</span>Overdue installment notification badge</li>
+        <li><span class="check-todo">□</span>Live search on customer list</li>
+        <li><span class="check-todo">□</span>Live search on sales list</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Priority Action Items -->
+  <h3 style="margin:32px 0 16px;font-size:15px;color:var(--text);font-weight:600;">⚡ Top 5 Priority Actions (Start Today)</h3>
+  <div class="card">
+    <div class="priority-item">
+      <div class="priority-rank">#1</div>
+      <div class="priority-content">
+        <div class="priority-name">Delete sftp-config.json from your web server</div>
+        <div class="priority-note">This file may contain your SFTP credentials. Log in to Hostinger File Manager right now and delete it. This takes 30 seconds and could prevent a serious breach.</div>
+      </div>
+      <span class="badge badge-red">Urgent</span>
+    </div>
+    <div class="priority-item">
+      <div class="priority-rank">#2</div>
+      <div class="priority-content">
+        <div class="priority-name">Change admin password + update to bcrypt</div>
+        <div class="priority-note">Your MD5 password hash is visible in the database backup. Run a new bcrypt hash via PHP and update tbl_admin. Also change the actual password to something strong.</div>
+      </div>
+      <span class="badge badge-red">Urgent</span>
+    </div>
+    <div class="priority-item">
+      <div class="priority-rank">#3</div>
+      <div class="priority-content">
+        <div class="priority-name">Enable CSRF protection in application/config/config.php</div>
+        <div class="priority-note">One line change. Prevents form submission attacks. Add the CSRF token to the login form. Do this before the next customer session.</div>
+      </div>
+      <span class="badge badge-amber">High</span>
+    </div>
+    <div class="priority-item">
+      <div class="priority-rank">#4</div>
+      <div class="priority-content">
+        <div class="priority-name">Set up GitHub repo and take full backup</div>
+        <div class="priority-note">Before any code changes, get everything into Git. This gives you a rollback point. One hour of setup work protects years of business logic.</div>
+      </div>
+      <span class="badge badge-amber">High</span>
+    </div>
+    <div class="priority-item">
+      <div class="priority-rank">#5</div>
+      <div class="priority-content">
+        <div class="priority-name">Start CodeIgniter 4 migration in staging</div>
+        <div class="priority-note">Install CI4 fresh in a subfolder. Begin with the Auth and Dashboard controllers. Your live system keeps running — zero risk.</div>
+      </div>
+      <span class="badge badge-blue">Planned</span>
+    </div>
+  </div>
+
+  <!-- Final Summary -->
+  <div style="margin-top:32px;background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(245,158,11,0.03));border:1px solid rgba(245,158,11,0.2);border-radius:var(--radius-lg);padding:28px 32px;">
+    <div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:10px;">🚀 What You Get at the End</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13.5px;color:var(--text2);">
+      <div>✅ Fully secure system (bcrypt, CSRF, input validation)</div>
+      <div>✅ Clean, professional dark UI your customers can see</div>
+      <div>✅ Works on mobile (phone in your pocket)</div>
+      <div>✅ PDF receipts in seconds</div>
+      <div>✅ Sales analytics with charts</div>
+      <div>✅ Overdue installment alerts</div>
+      <div>✅ Live customer/sale search</div>
+      <div>✅ All 1,451+ records completely preserved</div>
+      <div>✅ Runs on same Hostinger plan (no extra cost)</div>
+      <div>✅ GitHub version control (code can never be lost)</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:40px 0 20px;color:var(--text3);font-size:13px;">
+    Rais Motors — System Modernization Blueprint · Prepared by Senior Full-Stack Architect · 2026
+    <br><br>
+    <span style="font-family:var(--mono);font-size:11px;color:var(--border2);">All existing data is safe. No schema changes required. Same hosting. Better everything.</span>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+// Highlight active nav link on scroll
+const sections = document.querySelectorAll('section[id], div[id]');
+const navLinks = document.querySelectorAll('.nav-link');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + entry.target.id) {
+          link.classList.add('active');
+        }
+      });
+    }
+  });
+}, { threshold: 0.2, rootMargin: '-60px 0px -60% 0px' });
+
+sections.forEach(section => observer.observe(section));
+</script>
+</body>
+</html>

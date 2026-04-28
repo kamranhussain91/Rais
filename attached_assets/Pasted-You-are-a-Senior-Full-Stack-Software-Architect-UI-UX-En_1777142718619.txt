@@ -1,0 +1,135 @@
+You are a Senior Full-Stack Software Architect & UI/UX Engineer.
+I will provide you with a complete existing web project (files + database structure) that is already live on a Hostinger domain. The project belongs to a bike showroom management system called “Rais Motors”.
+🧩 Current Situation
+
+* The system is already deployed and working.
+* It has:
+   * Login system (username/password)
+   * Owner dashboard
+   * Data entry for bikes/items, prices, records, etc.
+   * Backend database with existing business data (VERY IMPORTANT: must not be lost or modified incorrectly)
+* The current UI is old, outdated, and not professional
+* The owner uses it to manage showroom operations
+🎯 Main Objective
+You must completely modernize and upgrade this application into a:
+
+* Clean
+* Professional
+* Modern
+* Mobile-responsive
+* Easy-to-use web application
+Without breaking existing functionality or losing any data.
+⚠️ Critical Constraints (VERY IMPORTANT)
+
+1. ❌ Do NOT delete or corrupt the existing database or data
+2. ❌ Do NOT break the login system or authentication flow
+3. ❌ Must preserve all existing business logic
+4. ✅ You can refactor, optimize, and modernize code safely
+5. ✅ You can upgrade UI, backend structure, and architecture
+6. ✅ Must remain fully compatible with existing data
+🏗️ Required Output Structure
+You must return:
+1. Full Project Analysis
+
+* Explain the current architecture
+* Identify problems in UI, backend, and structure
+* Identify security issues (if any)
+* Identify performance issues
+2. Modern System Redesign Plan
+Redesign the application with a modern architecture:
+
+* Clean folder structure
+* Scalable backend design
+* API structure (if needed)
+* Database integration approach
+* Secure authentication flow
+3. UI/UX Redesign (Very Important)
+Create a completely new modern interface for:
+🔐 Login Page
+
+* Clean, minimal design
+* Mobile friendly
+* Secure login UI
+📊 Dashboard
+Must include:
+
+* Total sales overview
+* Total bikes/items
+* Monthly revenue chart
+* Weekly sales performance
+* Pending/remaining payments
+* KPI summary cards
+* Recent transactions
+Use modern dashboard UI style like:
+
+* Cards
+* Charts
+* Tables
+* Clean typography
+* Responsive layout
+🚲 Inventory / Items Management
+
+* Add / edit / delete bikes/items
+* Price management
+* Stock tracking
+* Search & filter system
+💰 Sales / Records System
+
+* Add sales entries
+* Customer records
+* Payment tracking
+* Receipt generation system
+4. New Features to Add
+Enhance the system with:
+📈 Analytics Dashboard
+
+* Sales per month
+* Weekly performance
+* Revenue trends
+* Best-selling items
+* Pending payments overview
+🧾 Receipt / Slip Generator
+
+* Generate printable receipts
+* Include:
+   * Customer name
+   * Item details
+   * Price breakdown
+   * Date/time
+* Download PDF option
+📱 Mobile Optimization
+
+* Fully responsive design
+* Mobile-first UI
+* Smooth navigation on phone
+🔐 Security Improvements
+
+* Strong authentication flow
+* Session handling
+* Basic protection against unauthorized access
+5. Deployment Strategy (IMPORTANT)
+Explain step-by-step:
+
+* How to push the updated project to GitHub
+* How to connect it to Vercel
+* How to deploy and keep it live permanently
+* How to configure environment variables
+* How to ensure the database remains connected after deployment
+6. Tech Stack Recommendation
+If improvement is needed, suggest:
+
+* Modern frontend framework (React / Next.js preferred)
+* Backend structure (Node.js / API routes)
+* UI framework (Tailwind CSS preferred)
+* Chart library for analytics
+* PDF generation library
+7. Final Deliverable
+At the end, provide:
+
+* Clean upgraded code structure
+* Migration-safe plan
+* UI redesign implementation strategy
+* Deployment-ready version
+🧠 Final Instruction
+Your goal is NOT just to redesign UI.
+Your goal is to: 👉 Transform this into a modern SaaS-like showroom management system 👉 Without losing existing data 👉 Fully production-ready for real business use 👉 Easy for owner to use anywhere via mobile or laptop browser

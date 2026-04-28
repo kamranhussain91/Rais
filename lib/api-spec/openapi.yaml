@@ -3,20 +3,29 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Rais Motors showroom management API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: bikes
+    description: Bike inventory
+  - name: customers
+    description: Customer records
+  - name: sales
+    description: Sales records
+  - name: dashboard
+    description: Dashboard summaries
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +33,687 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with username and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current session
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /bikes:
+    get:
+      operationId: listBikes
+      tags: [bikes]
+      summary: List all bikes
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [in_stock, low_stock, out_of_stock]
+      responses:
+        "200":
+          description: List of bikes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Bike"
+    post:
+      operationId: createBike
+      tags: [bikes]
+      summary: Create a new bike
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BikeInput"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bike"
+  /bikes/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: getBike
+      tags: [bikes]
+      responses:
+        "200":
+          description: Bike
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bike"
+    patch:
+      operationId: updateBike
+      tags: [bikes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BikeInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bike"
+    delete:
+      operationId: deleteBike
+      tags: [bikes]
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+
+  /customers:
+    get:
+      operationId: listCustomers
+      tags: [customers]
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of customers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Customer"
+    post:
+      operationId: createCustomer
+      tags: [customers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerInput"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+  /customers/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: getCustomer
+      tags: [customers]
+      responses:
+        "200":
+          description: Customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerWithSales"
+    patch:
+      operationId: updateCustomer
+      tags: [customers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+    delete:
+      operationId: deleteCustomer
+      tags: [customers]
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+
+  /sales:
+    get:
+      operationId: listSales
+      tags: [sales]
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: paymentStatus
+          schema:
+            type: string
+            enum: [paid, partial, unpaid]
+      responses:
+        "200":
+          description: List of sales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SaleWithDetails"
+    post:
+      operationId: createSale
+      tags: [sales]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaleInput"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleWithDetails"
+  /sales/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: getSale
+      tags: [sales]
+      responses:
+        "200":
+          description: Sale
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleWithDetails"
+    delete:
+      operationId: deleteSale
+      tags: [sales]
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+  /sales/{id}/payments:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    post:
+      operationId: addSalePayment
+      tags: [sales]
+      summary: Record a payment against a sale
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentInput"
+      responses:
+        "200":
+          description: Updated sale
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleWithDetails"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Top-level KPI summary
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /dashboard/monthly-revenue:
+    get:
+      operationId: getMonthlyRevenue
+      tags: [dashboard]
+      summary: Revenue grouped by month for the last 12 months
+      responses:
+        "200":
+          description: Monthly revenue series
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MonthlyRevenuePoint"
+  /dashboard/weekly-sales:
+    get:
+      operationId: getWeeklySales
+      tags: [dashboard]
+      summary: Sales count grouped per day for the last 7 days
+      responses:
+        "200":
+          description: Weekly sales series
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WeeklySalesPoint"
+  /dashboard/best-sellers:
+    get:
+      operationId: getBestSellers
+      tags: [dashboard]
+      summary: Best-selling bikes
+      responses:
+        "200":
+          description: Best sellers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BestSeller"
+  /dashboard/recent-sales:
+    get:
+      operationId: getRecentSales
+      tags: [dashboard]
+      summary: Recent sales activity
+      responses:
+        "200":
+          description: Recent sales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SaleWithDetails"
+  /dashboard/period-stats:
+    get:
+      operationId: getPeriodStats
+      tags: [dashboard]
+      summary: Aggregate sales statistics for a chosen period
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, yearly, all]
+      responses:
+        "200":
+          description: Period statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PeriodStats"
+  /dashboard/pending-payments:
+    get:
+      operationId: getPendingPayments
+      tags: [dashboard]
+      summary: Pending/unpaid sales
+      responses:
+        "200":
+          description: Pending payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SaleWithDetails"
+  /dashboard/profit:
+    get:
+      operationId: getProfit
+      tags: [dashboard]
+      summary: Profit calculation for a period
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, yearly, all]
+      responses:
+        "200":
+          description: Profit statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfitStats"
+  /banks:
+    get:
+      operationId: listBanks
+      tags: [banks]
+      responses:
+        "200":
+          description: All banks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Bank"
+    post:
+      operationId: createBank
+      tags: [banks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BankInput"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bank"
+  /banks/{id}:
+    patch:
+      operationId: updateBank
+      tags: [banks]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BankInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bank"
+    delete:
+      operationId: deleteBank
+      tags: [banks]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+  /banks/{id}/transactions:
+    get:
+      operationId: listBankTransactions
+      tags: [banks]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BankTransaction"
+    post:
+      operationId: createBankTransaction
+      tags: [banks]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BankTransactionInput"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankTransaction"
+  /expenses:
+    get:
+      operationId: listExpenses
+      tags: [expenses]
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Expense"
+    post:
+      operationId: createExpense
+      tags: [expenses]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseInput"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+  /expenses/summary:
+    get:
+      operationId: getExpenseSummary
+      tags: [expenses]
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseSummary"
+  /expenses/{id}:
+    patch:
+      operationId: updateExpense
+      tags: [expenses]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+    delete:
+      operationId: deleteExpense
+      tags: [expenses]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+  /purchase-orders:
+    get:
+      operationId: listPurchaseOrders
+      tags: [purchase-orders]
+      responses:
+        "200":
+          description: Purchase orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PurchaseOrder"
+    post:
+      operationId: createPurchaseOrder
+      tags: [purchase-orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseOrderInput"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseOrder"
+  /purchase-orders/{id}/receive:
+    post:
+      operationId: receivePurchaseOrder
+      tags: [purchase-orders]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseOrder"
+  /purchase-orders/{id}:
+    delete:
+      operationId: deletePurchaseOrder
+      tags: [purchase-orders]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +721,549 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    SuccessMessage:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required: [success]
+
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    LoginInput:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+      required: [username, password]
+
+    AuthSession:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        fullName:
+          type: string
+        role:
+          type: string
+      required: [id, username, fullName, role]
+
+    BikeInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        brand:
+          type: string
+        model:
+          type: string
+        category:
+          type: string
+        color:
+          type: string
+        engineCc:
+          type: integer
+          nullable: true
+        purchasePrice:
+          type: number
+        salePrice:
+          type: number
+        stock:
+          type: integer
+        lowStockThreshold:
+          type: integer
+        sku:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required: [name, brand, model, category, salePrice, stock, sku]
+
+    Bike:
+      allOf:
+        - $ref: "#/components/schemas/BikeInput"
+        - type: object
+          properties:
+            id:
+              type: integer
+            createdAt:
+              type: string
+            updatedAt:
+              type: string
+          required: [id, createdAt, updatedAt]
+
+    CustomerInput:
+      type: object
+      properties:
+        fullName:
+          type: string
+          minLength: 1
+        phone:
+          type: string
+        email:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        cnic:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required: [fullName, phone]
+
+    Customer:
+      allOf:
+        - $ref: "#/components/schemas/CustomerInput"
+        - type: object
+          properties:
+            id:
+              type: integer
+            createdAt:
+              type: string
+          required: [id, createdAt]
+
+    CustomerWithSales:
+      allOf:
+        - $ref: "#/components/schemas/Customer"
+        - type: object
+          properties:
+            sales:
+              type: array
+              items:
+                $ref: "#/components/schemas/SaleWithDetails"
+            totalSpent:
+              type: number
+            totalDue:
+              type: number
+          required: [sales, totalSpent, totalDue]
+
+    SaleInput:
+      type: object
+      properties:
+        customerId:
+          type: integer
+        bikeId:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+        unitPrice:
+          type: number
+        discount:
+          type: number
+        amountPaid:
+          type: number
+        paymentMethod:
+          type: string
+        notes:
+          type: string
+          nullable: true
+      required: [customerId, bikeId, quantity, unitPrice, amountPaid, paymentMethod]
+
+    PaymentInput:
+      type: object
+      properties:
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        paymentMethod:
+          type: string
+        note:
+          type: string
+          nullable: true
+      required: [amount, paymentMethod]
+
+    SaleWithDetails:
+      type: object
+      properties:
+        id:
+          type: integer
+        invoiceNo:
+          type: string
+        customerId:
+          type: integer
+        bikeId:
+          type: integer
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+        discount:
+          type: number
+        totalAmount:
+          type: number
+        amountPaid:
+          type: number
+        amountDue:
+          type: number
+        paymentMethod:
+          type: string
+        paymentStatus:
+          type: string
+          enum: [paid, partial, unpaid]
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        customer:
+          $ref: "#/components/schemas/Customer"
+        bike:
+          $ref: "#/components/schemas/Bike"
+      required:
+        - id
+        - invoiceNo
+        - customerId
+        - bikeId
+        - quantity
+        - unitPrice
+        - discount
+        - totalAmount
+        - amountPaid
+        - amountDue
+        - paymentMethod
+        - paymentStatus
+        - createdAt
+        - customer
+        - bike
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalRevenue:
+          type: number
+        totalSales:
+          type: integer
+        totalBikes:
+          type: integer
+        totalStock:
+          type: integer
+        totalCustomers:
+          type: integer
+        pendingPayments:
+          type: number
+        monthRevenue:
+          type: number
+        monthSales:
+          type: integer
+        weekRevenue:
+          type: number
+        lowStockCount:
+          type: integer
+      required:
+        - totalRevenue
+        - totalSales
+        - totalBikes
+        - totalStock
+        - totalCustomers
+        - pendingPayments
+        - monthRevenue
+        - monthSales
+        - weekRevenue
+        - lowStockCount
+
+    MonthlyRevenuePoint:
+      type: object
+      properties:
+        month:
+          type: string
+        revenue:
+          type: number
+        sales:
+          type: integer
+      required: [month, revenue, sales]
+
+    WeeklySalesPoint:
+      type: object
+      properties:
+        date:
+          type: string
+        sales:
+          type: integer
+        revenue:
+          type: number
+      required: [date, sales, revenue]
+
+    BestSeller:
+      type: object
+      properties:
+        bikeId:
+          type: integer
+        name:
+          type: string
+        brand:
+          type: string
+        unitsSold:
+          type: integer
+        revenue:
+          type: number
+      required: [bikeId, name, brand, unitsSold, revenue]
+
+    PeriodStats:
+      type: object
+      properties:
+        period:
+          type: string
+        label:
+          type: string
+        revenue:
+          type: number
+        total:
+          type: number
+        due:
+          type: number
+        sales:
+          type: integer
+        uniqueCustomers:
+          type: integer
+        averageSale:
+          type: number
+      required: [period, label, revenue, total, due, sales, uniqueCustomers, averageSale]
+
+    ProfitStats:
+      type: object
+      properties:
+        period:
+          type: string
+        label:
+          type: string
+        revenue:
+          type: number
+        cost:
+          type: number
+        grossProfit:
+          type: number
+        expenses:
+          type: number
+        netProfit:
+          type: number
+        sales:
+          type: integer
+        margin:
+          type: number
+      required: [period, label, revenue, cost, grossProfit, expenses, netProfit, sales, margin]
+
+    Bank:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        accountNumber:
+          type: string
+          nullable: true
+        openingBalance:
+          type: number
+        balance:
+          type: number
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required: [id, name, openingBalance, balance, createdAt]
+
+    BankInput:
+      type: object
+      properties:
+        name:
+          type: string
+        accountNumber:
+          type: string
+          nullable: true
+        openingBalance:
+          type: number
+        notes:
+          type: string
+          nullable: true
+      required: [name]
+
+    BankTransaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        bankId:
+          type: integer
+        bankName:
+          type: string
+          nullable: true
+        type:
+          type: string
+        amount:
+          type: number
+        description:
+          type: string
+        refType:
+          type: string
+          nullable: true
+        refId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+      required: [id, bankId, type, amount, description, createdAt]
+
+    BankTransactionInput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [credit, debit]
+        amount:
+          type: number
+        description:
+          type: string
+      required: [type, amount]
+
+    Expense:
+      type: object
+      properties:
+        id:
+          type: integer
+        expenseDate:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        paidTo:
+          type: string
+          nullable: true
+        amount:
+          type: number
+        bankId:
+          type: integer
+          nullable: true
+        bankName:
+          type: string
+          nullable: true
+        paymentMethod:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required: [id, expenseDate, category, description, amount, paymentMethod, createdAt]
+
+    ExpenseInput:
+      type: object
+      properties:
+        expenseDate:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        paidTo:
+          type: string
+          nullable: true
+        amount:
+          type: number
+        bankId:
+          type: integer
+          nullable: true
+        paymentMethod:
+          type: string
+        notes:
+          type: string
+          nullable: true
+      required: [description, amount]
+
+    ExpenseSummary:
+      type: object
+      properties:
+        total:
+          type: number
+        month:
+          type: number
+        year:
+          type: number
+      required: [total, month, year]
+
+    PurchaseOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+        orderNo:
+          type: string
+        supplierName:
+          type: string
+        bikeId:
+          type: integer
+        bikeName:
+          type: string
+          nullable: true
+        quantity:
+          type: integer
+        unitCost:
+          type: number
+        totalCost:
+          type: number
+        status:
+          type: string
+        bankId:
+          type: integer
+          nullable: true
+        bankName:
+          type: string
+          nullable: true
+        orderDate:
+          type: string
+        receivedDate:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required: [id, orderNo, supplierName, bikeId, quantity, unitCost, totalCost, status, orderDate, createdAt]
+
+    PurchaseOrderInput:
+      type: object
+      properties:
+        supplierName:
+          type: string
+        bikeId:
+          type: integer
+        quantity:
+          type: integer
+        unitCost:
+          type: number
+        bankId:
+          type: integer
+          nullable: true
+        orderDate:
+          type: string
+        status:
+          type: string
+        notes:
+          type: string
+          nullable: true
+      required: [supplierName, bikeId, quantity, unitCost]

@@ -5,10 +5,18 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
+    "seed": "tsx ./src/seed.ts",
+    "import-backup": "tsx ./src/import-backup.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
+  "dependencies": {
+    "@workspace/db": "workspace:*",
+    "drizzle-orm": "catalog:"
+  },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.8",
     "@types/node": "catalog:",
+    "adm-zip": "^0.5.17",
     "tsx": "catalog:"
   }
 }
