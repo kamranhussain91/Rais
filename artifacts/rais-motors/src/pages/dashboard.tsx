@@ -115,86 +115,53 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <Card className="border-primary/30 bg-primary/5">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base">{periodStats?.label ?? "Loading"} Performance</CardTitle>
-              <CardDescription>Sales activity for the selected period</CardDescription>
-            </div>
-            <TrendingUp className="h-5 w-5 text-primary" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          {loadingPeriod || !periodStats ? (
-            <div className="flex h-24 items-center justify-center">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Revenue</p>
-                <p className="mt-1 text-xl font-bold" data-testid="text-period-revenue">
-                  {formatPKR(periodStats.revenue)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Billed</p>
-                <p className="mt-1 text-xl font-bold">{formatPKR(periodStats.total)}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Sales</p>
-                <p className="mt-1 text-xl font-bold" data-testid="text-period-sales">
-                  {periodStats.sales}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Customers</p>
-                <p className="mt-1 text-xl font-bold">{periodStats.uniqueCustomers}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Avg Sale</p>
-                <p className="mt-1 text-xl font-bold">{formatPKR(periodStats.averageSale)}</p>
-              </div>
-            </div>
-          )}
-          {!loadingPeriod && periodStats?.sales === 0 && (
-            <p className="mt-3 text-xs text-muted-foreground">
-              No sales recorded in this period. Try a wider range like "All Time" or "This Year".
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">Revenue ({periodStats?.label ?? "..."})</CardTitle>
             <Banknote className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatPKR(summary.totalRevenue)}</div>
-            <p className="text-xs text-muted-foreground">Lifetime sales revenue</p>
+            {loadingPeriod || !periodStats ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold" data-testid="text-period-revenue">{formatPKR(periodStats.revenue)}</div>
+                <p className="text-xs text-muted-foreground">{formatPKR(periodStats.total)} billed</p>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Month</CardTitle>
+            <CardTitle className="text-sm font-medium">Sales ({periodStats?.label ?? "..."})</CardTitle>
             <ReceiptText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatPKR(summary.monthRevenue)}</div>
-            <p className="text-xs text-muted-foreground">{summary.monthSales} sales this month</p>
+            {loadingPeriod || !periodStats ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold" data-testid="text-period-sales">{periodStats.sales}</div>
+                <p className="text-xs text-muted-foreground">Avg {formatPKR(periodStats.averageSale)} / sale</p>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-            <PackageOpen className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Customers ({periodStats?.label ?? "..."})</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.totalSales}</div>
-            <p className="text-xs text-muted-foreground">Invoices recorded</p>
+            {loadingPeriod || !periodStats ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{periodStats.uniqueCustomers}</div>
+                <p className="text-xs text-muted-foreground">Unique buyers in period</p>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card className={profitData && profitData.netProfit >= 0 ? "border-emerald-500/30" : "border-red-500/30"}>
@@ -383,18 +350,100 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Best Selling Bikes</CardTitle>
-            <CardDescription>Top 5 by units sold</CardDescription>
+            <CardDescription>Top models ranked by units sold (lifetime)</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
-              {bestSellers.map((b) => (
-                <div key={b.bikeId} className="rounded-md border p-3">
-                  <p className="text-xs text-muted-foreground">{b.brand}</p>
-                  <p className="font-medium truncate">{b.name}</p>
-                  <p className="mt-1 text-sm font-bold">{b.unitsSold} units</p>
-                  <p className="text-xs text-muted-foreground">{formatPKR(b.revenue)}</p>
+            <div className="grid gap-6 lg:grid-cols-5">
+              <div className="lg:col-span-3">
+                <div className="h-[320px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={bestSellers.map((b) => ({
+                        label: b.name,
+                        brand: b.brand,
+                        units: b.unitsSold,
+                        revenue: b.revenue,
+                      }))}
+                      layout="vertical"
+                      margin={{ top: 5, right: 24, left: 8, bottom: 5 }}
+                      barCategoryGap={12}
+                    >
+                      <defs>
+                        <linearGradient id="bestSellerGradient" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.9} />
+                          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.55} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
+                      <XAxis
+                        type="number"
+                        stroke="hsl(var(--muted-foreground))"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                        allowDecimals={false}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="label"
+                        stroke="hsl(var(--muted-foreground))"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                        width={130}
+                      />
+                      <RechartsTooltip
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))' }}
+                        cursor={{ fill: 'hsl(var(--muted))', opacity: 0.4 }}
+                        formatter={(value: number, name: string, item: any) => {
+                          if (name === 'units') {
+                            return [`${value} units · ${formatPKR(item.payload.revenue)}`, item.payload.brand];
+                          }
+                          return [value, name];
+                        }}
+                      />
+                      <Bar
+                        dataKey="units"
+                        fill="url(#bestSellerGradient)"
+                        radius={[0, 6, 6, 0]}
+                        label={{ position: 'right', fill: 'hsl(var(--foreground))', fontSize: 12, fontWeight: 600 }}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-              ))}
+              </div>
+              <div className="space-y-2 lg:col-span-2">
+                {bestSellers.map((b, idx) => {
+                  const max = Math.max(...bestSellers.map((x) => x.unitsSold));
+                  const pct = max > 0 ? Math.round((b.unitsSold / max) * 100) : 0;
+                  return (
+                    <div key={b.bikeId} className="rounded-md border p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Badge variant={idx === 0 ? "default" : "secondary"} className="shrink-0 text-[10px]">
+                            #{idx + 1}
+                          </Badge>
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{b.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{b.brand}</p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-bold">{b.unitsSold}</p>
+                          <p className="text-[10px] text-muted-foreground">units</p>
+                        </div>
+                      </div>
+                      <div className="mt-2 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground text-right">{formatPKR(b.revenue)}</p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </CardContent>
         </Card>
