@@ -1,0 +1,1 @@
+- [Honda POS Architecture](honda-pos-arch.md) — file-based JSON DB, Express routes in honda-pos.ts, React frontend with AppContext for all API calls, FBR tax integration simulated.

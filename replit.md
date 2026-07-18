@@ -1,6 +1,6 @@
-# [Project name]
+# Rais Honda POS & Workshop
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A full-featured Point of Sale and workshop management system for a Honda motorcycle parts store — handles sales, inventory, service records, banking/ledger, FBR tax integration, and customer CRM.
 
 ## Run & Operate
 
