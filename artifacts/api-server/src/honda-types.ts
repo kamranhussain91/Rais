@@ -84,6 +84,7 @@ export interface PurchaseItem {
   partNumber: string;
   purchasePrice: number;
   qty: number;
+  qtyReceived?: number; // cumulative units received into stock so far
 }
 
 export interface PurchaseRecord {
@@ -96,7 +97,7 @@ export interface PurchaseRecord {
   amountPaid: number;
   paymentMethod: 'Cash' | 'Bank Transfer' | 'Mobile Wallet';
   bankAccountId?: string;
-  status?: 'pending' | 'received';
+  status?: 'pending' | 'partial' | 'received';
   notes?: string;
 }
 

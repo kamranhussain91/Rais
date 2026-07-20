@@ -670,7 +670,7 @@ router.put("/purchases/:id", (req, res) => {
   res.json({ success: true, db });
 });
 
-// PATCH mark purchase as received — this is where stock is updated
+// PATCH mark purchase as received — this is where stock is updated (receive ALL remaining)
 router.patch("/purchases/:id/receive", (req, res) => {
   const db = readDB();
   const { userId, username } = req.body.auth || { userId: "1", username: "admin" };
@@ -678,29 +678,91 @@ router.patch("/purchases/:id/receive", (req, res) => {
   if (idx === -1) { res.status(404).json({ error: "Purchase not found" }); return; }
   if (db.purchases[idx].status === 'received') { res.status(400).json({ error: "Purchase already received" }); return; }
 
-  db.purchases[idx].status = 'received';
-
-  // Update inventory stock and recalculate weighted average purchase price
+  let totalAdded = 0;
+  // Update inventory stock and recalculate weighted average purchase price for remaining qty
   db.purchases[idx].items.forEach((item) => {
+    const alreadyReceived = item.qtyReceived || 0;
+    const remaining = item.qty - alreadyReceived;
+    if (remaining <= 0) return;
+    item.qtyReceived = item.qty; // mark item fully received
+
     const pIdx = db.products.findIndex((p) => p.id === item.productId);
     if (pIdx !== -1) {
       const oldStock = db.products[pIdx].stock;
       const oldPrice = db.products[pIdx].purchasePrice;
-      // Weighted average cost
-      if (oldStock + item.qty > 0) {
+      if (oldStock + remaining > 0) {
         db.products[pIdx].purchasePrice = Math.round(
-          ((oldStock * oldPrice) + (item.qty * item.purchasePrice)) / (oldStock + item.qty)
+          ((oldStock * oldPrice) + (remaining * item.purchasePrice)) / (oldStock + remaining)
         );
       } else {
         db.products[pIdx].purchasePrice = item.purchasePrice;
       }
-      db.products[pIdx].stock += item.qty;
+      db.products[pIdx].stock += remaining;
+      totalAdded += remaining;
     }
   });
 
-  logActivity(userId, username, `Purchase ${db.purchases[idx].invoiceRef} marked as received — inventory updated (+${db.purchases[idx].items.reduce((s, i) => s + i.qty, 0)} units)`);
+  db.purchases[idx].status = 'received';
+  logActivity(userId, username, `Purchase ${db.purchases[idx].invoiceRef} fully received — inventory updated (+${totalAdded} units)`);
   writeDB(db);
   res.json({ success: true, db });
+});
+
+// PATCH partial receive — receive specific quantities per item, update stock incrementally
+router.patch("/purchases/:id/partial-receive", (req, res) => {
+  const db = readDB();
+  const { userId, username } = req.body.auth || { userId: "1", username: "admin" };
+  const idx = db.purchases.findIndex((p) => p.id === req.params.id);
+  if (idx === -1) { res.status(404).json({ error: "Purchase not found" }); return; }
+  if (db.purchases[idx].status === 'received') { res.status(400).json({ error: "Purchase already fully received" }); return; }
+
+  // receipts: [{ productId, qtyToReceive }]
+  const receipts: { productId: string; qtyToReceive: number }[] = req.body.receipts || [];
+  if (!receipts.length) { res.status(400).json({ error: "No receipt quantities provided" }); return; }
+
+  let totalAdded = 0;
+  const errors: string[] = [];
+
+  receipts.forEach(({ productId, qtyToReceive }) => {
+    if (qtyToReceive <= 0) return;
+    const itemIdx = db.purchases[idx].items.findIndex((i) => i.productId === productId);
+    if (itemIdx === -1) { errors.push(`Product ${productId} not in this order`); return; }
+
+    const item = db.purchases[idx].items[itemIdx];
+    const alreadyReceived = item.qtyReceived || 0;
+    const remaining = item.qty - alreadyReceived;
+    if (remaining <= 0) { errors.push(`${item.name} is already fully received`); return; }
+
+    const actualQty = Math.min(qtyToReceive, remaining); // cannot exceed ordered qty
+    item.qtyReceived = alreadyReceived + actualQty;
+
+    // Update product stock + weighted average cost
+    const pIdx = db.products.findIndex((p) => p.id === productId);
+    if (pIdx !== -1) {
+      const oldStock = db.products[pIdx].stock;
+      const oldPrice = db.products[pIdx].purchasePrice;
+      if (oldStock + actualQty > 0) {
+        db.products[pIdx].purchasePrice = Math.round(
+          ((oldStock * oldPrice) + (actualQty * item.purchasePrice)) / (oldStock + actualQty)
+        );
+      } else {
+        db.products[pIdx].purchasePrice = item.purchasePrice;
+      }
+      db.products[pIdx].stock += actualQty;
+      totalAdded += actualQty;
+    }
+  });
+
+  // Determine new status: fully received if every item's qtyReceived === qty
+  const allReceived = db.purchases[idx].items.every((i) => (i.qtyReceived || 0) >= i.qty);
+  db.purchases[idx].status = allReceived ? 'received' : 'partial';
+
+  logActivity(
+    userId, username,
+    `Purchase ${db.purchases[idx].invoiceRef} partial receipt — +${totalAdded} units added. Status: ${db.purchases[idx].status}`
+  );
+  writeDB(db);
+  res.json({ success: true, db, errors: errors.length ? errors : undefined });
 });
 
 // POST record workshop service

@@ -35,6 +35,7 @@ interface AppContextType {
   savePurchase: (purchase: PurchaseRecord) => Promise<boolean>;
   editPurchase: (id: string, purchase: PurchaseRecord) => Promise<boolean>;
   receivePurchase: (id: string) => Promise<boolean>;
+  partialReceivePurchase: (id: string, receipts: { productId: string; qtyToReceive: number }[]) => Promise<{ success: boolean; errors?: string[] }>;
   saveServiceRecord: (service: ServiceRecord) => Promise<boolean>;
   updateServiceRecord: (id: string, updates: Partial<ServiceRecord>) => Promise<boolean>;
   updateRemindersStatus: (ids: string[], status: 'Pending' | 'Sent' | 'Confirmed') => Promise<boolean>;
@@ -315,6 +316,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (err) {
       console.error(err);
       return false;
+    }
+  };
+
+  const partialReceivePurchase = async (
+    id: string,
+    receipts: { productId: string; qtyToReceive: number }[]
+  ): Promise<{ success: boolean; errors?: string[] }> => {
+    try {
+      const res = await fetch(`/api/purchases/${id}/partial-receive`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ receipts, auth: { userId: currentUser?.id, username: currentUser?.username } })
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Failed'); }
+      const result = await res.json();
+      if (result.success) { setDb(result.db); return { success: true, errors: result.errors }; }
+      return { success: false };
+    } catch (err) {
+      console.error(err);
+      return { success: false };
     }
   };
 
@@ -616,6 +637,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       savePurchase,
       editPurchase,
       receivePurchase,
+      partialReceivePurchase,
       saveServiceRecord,
       updateServiceRecord,
       updateRemindersStatus,

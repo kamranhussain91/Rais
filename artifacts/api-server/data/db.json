@@ -52,7 +52,7 @@
       "compatibility": "CG-125, CG-125 Self, CB-150F",
       "purchasePrice": 920,
       "sellingPrice": 1100,
-      "stock": 241,
+      "stock": 419,
       "minStock": 8,
       "supplierName": "Honda Atlas Parts Ltd",
       "location": "Pallet B, Floor"
@@ -720,6 +720,27 @@
   ],
   "purchases": [
     {
+      "id": "pur_1784553204850",
+      "invoiceRef": "PO-381252",
+      "date": "2026-07-20T13:13:24.850Z",
+      "supplierName": "Honda Atlas Parts Ltd",
+      "items": [
+        {
+          "productId": "prod_2",
+          "name": "Honda Genuine Engine Oil 4T 20W-50 (1L)",
+          "partNumber": "08C35-20W50",
+          "purchasePrice": 920,
+          "qty": 100,
+          "qtyReceived": 70
+        }
+      ],
+      "totalAmount": 92000,
+      "amountPaid": 0,
+      "paymentMethod": "Bank Transfer",
+      "bankAccountId": "bank_1",
+      "status": "partial"
+    },
+    {
       "id": "pur_1784549775848",
       "invoiceRef": "PO-458760",
       "date": "2026-07-20T12:16:15.848Z",
@@ -737,7 +758,7 @@
       "amountPaid": 100000,
       "paymentMethod": "Bank Transfer",
       "bankAccountId": "bank_2",
-      "status": "pending"
+      "status": "received"
     },
     {
       "id": "pur_1783592747976",
@@ -1123,9 +1144,25 @@
       "bankName": "Cash-in-Hand Drawer",
       "accountNumber": "CASH-PRIMARY",
       "balance": 55525
+    },
+    {
+      "id": "bank_1784552761514",
+      "bankName": "HBL",
+      "accountNumber": "001",
+      "balance": 10000
     }
   ],
   "ledger": [
+    {
+      "id": "led_1784552761514",
+      "bankAccountId": "bank_1784552761514",
+      "bankName": "HBL",
+      "date": "2026-07-20T13:06:01.514Z",
+      "type": "Credit",
+      "amount": 10000,
+      "description": "Opening balance for HBL",
+      "balanceAfter": 10000
+    },
     {
       "id": "led_1784552042616",
       "bankAccountId": "cash_chest",
@@ -1506,14 +1543,6 @@
       "phone": "03145534533",
       "address": "",
       "bikeModel": "CD-70"
-    },
-    {
-      "id": "cust_1784552042596",
-      "name": "Kamran",
-      "phone": "0313333333",
-      "address": "",
-      "bikeModel": "",
-      "creditBalance": 0
     }
   ],
   "suppliers": [

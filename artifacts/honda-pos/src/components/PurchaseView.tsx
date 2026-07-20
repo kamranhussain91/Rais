@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useApp } from './AppContext';
 import { PurchaseRecord, PurchaseItem, Product } from '../types';
-import { Plus, Trash2, X, Eye, CheckCircle, Search, ChevronDown, Package, Pencil, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, X, Eye, CheckCircle, Search, ChevronDown, Package, Pencil, AlertTriangle, PackageCheck, Loader2 } from 'lucide-react';
 
 // ─── Searchable Product Dropdown (fixed-position — bypasses all overflow clips) ─
 interface ProductDropdownProps {
@@ -168,6 +168,223 @@ interface DraftItem {
   unitCost:   number;
 }
 
+// ─── Partial Receive Modal ────────────────────────────────────────────────────
+interface PartialReceiveModalProps {
+  purchase: PurchaseRecord;
+  onClose: () => void;
+  onSave: (id: string, receipts: { productId: string; qtyToReceive: number }[]) => Promise<{ success: boolean; errors?: string[] }>;
+}
+
+const PartialReceiveModal: React.FC<PartialReceiveModalProps> = ({ purchase, onClose, onSave }) => {
+  // Local qty-to-receive per item, keyed by productId
+  const [qtys, setQtys] = useState<Record<string, number>>(() => {
+    const init: Record<string, number> = {};
+    purchase.items.forEach(item => { init[item.productId] = 0; });
+    return init;
+  });
+  const [saving,  setSaving]  = useState(false);
+  const [errors,  setErrors]  = useState<string[]>([]);
+
+  const totalOrdered  = purchase.items.reduce((s, i) => s + i.qty, 0);
+  const totalReceived = purchase.items.reduce((s, i) => s + (i.qtyReceived || 0), 0);
+  const totalPending  = totalOrdered - totalReceived;
+
+  const setAllRemaining = () => {
+    const next: Record<string, number> = {};
+    purchase.items.forEach(item => {
+      next[item.productId] = item.qty - (item.qtyReceived || 0);
+    });
+    setQtys(next);
+  };
+
+  const qtyToReceiveNow = Object.values(qtys).reduce((s, v) => s + v, 0);
+
+  const handleSubmit = async () => {
+    const receipts = purchase.items
+      .map(item => ({ productId: item.productId, qtyToReceive: qtys[item.productId] || 0 }))
+      .filter(r => r.qtyToReceive > 0);
+    if (!receipts.length) { setErrors(['Enter at least one quantity to receive.']); return; }
+    setSaving(true);
+    const result = await onSave(purchase.id, receipts);
+    setSaving(false);
+    if (result.success) {
+      if (result.errors?.length) setErrors(result.errors); // partial warnings
+      else onClose();
+    } else {
+      setErrors(['Failed to record receipt. Please try again.']);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-100 max-h-[92vh] flex flex-col">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+              <PackageCheck className="w-4 h-4 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-800 text-sm">Receive Stock</h3>
+              <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                {purchase.invoiceRef} · {purchase.supplierName}
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Progress summary */}
+        <div className="px-6 pt-4 shrink-0">
+          <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between gap-4">
+            <div className="text-xs">
+              <span className="text-slate-400">Total ordered: </span>
+              <span className="font-bold text-slate-800 font-mono">{totalOrdered} units</span>
+            </div>
+            <div className="text-xs">
+              <span className="text-slate-400">Already received: </span>
+              <span className="font-bold text-emerald-600 font-mono">{totalReceived} units</span>
+            </div>
+            <div className="text-xs">
+              <span className="text-slate-400">Still outstanding: </span>
+              <span className="font-bold text-amber-600 font-mono">{totalPending} units</span>
+            </div>
+            <button
+              type="button"
+              onClick={setAllRemaining}
+              className="ml-auto px-3 py-1.5 text-[11px] font-bold border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-all cursor-pointer whitespace-nowrap"
+            >
+              Receive All Remaining
+            </button>
+          </div>
+        </div>
+
+        {/* Errors */}
+        {errors.length > 0 && (
+          <div className="px-6 pt-3 shrink-0">
+            <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700">
+              {errors.map((e, i) => <p key={i}>{e}</p>)}
+            </div>
+          </div>
+        )}
+
+        {/* Items table */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="border border-slate-200 rounded-xl overflow-hidden">
+            <div
+              className="grid px-3 py-2.5 bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider"
+              style={{ gridTemplateColumns: '1fr 70px 70px 70px 100px' }}
+            >
+              <span>Product</span>
+              <span className="text-center">Ordered</span>
+              <span className="text-center">Received</span>
+              <span className="text-center">Remaining</span>
+              <span className="text-center">Receive Now</span>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {purchase.items.map((item) => {
+                const received  = item.qtyReceived || 0;
+                const remaining = item.qty - received;
+                const now       = qtys[item.productId] || 0;
+                const pct       = item.qty > 0 ? Math.round(((received + now) / item.qty) * 100) : 0;
+                const fullyDone = remaining === 0;
+
+                return (
+                  <div
+                    key={item.productId}
+                    className={`grid px-3 py-3 items-center gap-2 ${fullyDone ? 'bg-emerald-50/40' : 'hover:bg-slate-50/60'}`}
+                    style={{ gridTemplateColumns: '1fr 70px 70px 70px 100px' }}
+                  >
+                    {/* Product info */}
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-slate-800 truncate">{item.name}</p>
+                      {item.partNumber && (
+                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">{item.partNumber}</p>
+                      )}
+                      {/* Progress bar */}
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <div className="flex-1 h-1 bg-slate-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-emerald-500' : pct > 0 ? 'bg-blue-400' : 'bg-slate-300'}`}
+                            style={{ width: `${Math.min(pct, 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-mono text-slate-400 shrink-0">{pct}%</span>
+                      </div>
+                    </div>
+
+                    {/* Ordered */}
+                    <div className="text-center font-mono text-xs text-slate-600">{item.qty}</div>
+
+                    {/* Received */}
+                    <div className={`text-center font-mono text-xs font-semibold ${received > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                      {received}
+                    </div>
+
+                    {/* Remaining */}
+                    <div className={`text-center font-mono text-xs font-semibold ${remaining > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
+                      {remaining > 0 ? remaining : '—'}
+                    </div>
+
+                    {/* Receive now input */}
+                    {fullyDone ? (
+                      <div className="flex items-center justify-center">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600">
+                          <CheckCircle className="w-3.5 h-3.5" /> Done
+                        </span>
+                      </div>
+                    ) : (
+                      <input
+                        type="number"
+                        min="0"
+                        max={remaining}
+                        value={now || ''}
+                        onChange={e => {
+                          const v = Math.min(Math.max(0, parseInt(e.target.value) || 0), remaining);
+                          setQtys(prev => ({ ...prev, [item.productId]: v }));
+                        }}
+                        placeholder="0"
+                        className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs font-mono text-center outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/20"
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center gap-3 px-6 py-4 border-t border-slate-100 shrink-0 bg-white rounded-b-2xl">
+          <button
+            type="button" onClick={onClose}
+            className="flex-1 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-sm font-semibold transition-all cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={saving || qtyToReceiveNow === 0}
+            className="flex-[2] py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
+          >
+            {saving
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Updating Stock…</>
+              : <>
+                  <PackageCheck className="w-4 h-4" />
+                  Receive {qtyToReceiveNow > 0 ? `${qtyToReceiveNow} Unit${qtyToReceiveNow !== 1 ? 's' : ''}` : 'Stock'}
+                </>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── View Purchase Modal ──────────────────────────────────────────────────────
 const ViewModal: React.FC<{ purchase: PurchaseRecord; onClose: () => void }> = ({ purchase, onClose }) => {
   const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -210,27 +427,45 @@ const ViewModal: React.FC<{ purchase: PurchaseRecord; onClose: () => void }> = (
                 <thead className="bg-slate-50">
                   <tr>
                     <th className="px-3 py-2 text-left text-[10px] font-bold text-slate-500 uppercase">Product</th>
-                    <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-500 uppercase">Qty</th>
+                    <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-500 uppercase">Ordered</th>
+                    <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-500 uppercase">Received</th>
                     <th className="px-3 py-2 text-right text-[10px] font-bold text-slate-500 uppercase">Unit Cost</th>
                     <th className="px-3 py-2 text-right text-[10px] font-bold text-slate-500 uppercase">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {purchase.items.map((item, i) => (
-                    <tr key={i}>
-                      <td className="px-3 py-2">
-                        <p className="font-semibold text-slate-800">{item.name}</p>
-                        {item.partNumber && <p className="text-[10px] text-slate-400 font-mono">{item.partNumber}</p>}
-                      </td>
-                      <td className="px-3 py-2 text-center font-mono">{item.qty}</td>
-                      <td className="px-3 py-2 text-right font-mono">Rs. {item.purchasePrice.toLocaleString()}</td>
-                      <td className="px-3 py-2 text-right font-mono font-bold">Rs. {(item.purchasePrice * item.qty).toLocaleString()}</td>
-                    </tr>
-                  ))}
+                  {purchase.items.map((item, i) => {
+                    const received = item.qtyReceived ?? (purchase.status === 'received' ? item.qty : 0);
+                    const remaining = item.qty - received;
+                    return (
+                      <tr key={i}>
+                        <td className="px-3 py-2">
+                          <p className="font-semibold text-slate-800">{item.name}</p>
+                          {item.partNumber && <p className="text-[10px] text-slate-400 font-mono">{item.partNumber}</p>}
+                          {/* mini progress bar */}
+                          <div className="mt-1 h-1 w-24 bg-slate-200 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${received >= item.qty ? 'bg-emerald-500' : received > 0 ? 'bg-blue-400' : 'bg-slate-300'}`}
+                              style={{ width: `${item.qty > 0 ? Math.round((received / item.qty) * 100) : 0}%` }}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center font-mono">{item.qty}</td>
+                        <td className="px-3 py-2 text-center">
+                          <span className={`font-mono font-semibold ${received >= item.qty ? 'text-emerald-600' : received > 0 ? 'text-blue-600' : 'text-slate-400'}`}>
+                            {received}
+                            {remaining > 0 && <span className="text-slate-400 text-[10px] ml-1">({remaining} left)</span>}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono">Rs. {item.purchasePrice.toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right font-mono font-bold">Rs. {(item.purchasePrice * item.qty).toLocaleString()}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
                 <tfoot>
                   <tr className="bg-slate-50 border-t border-slate-200">
-                    <td colSpan={3} className="px-3 py-2 text-right text-xs font-bold text-slate-600">Total:</td>
+                    <td colSpan={4} className="px-3 py-2 text-right text-xs font-bold text-slate-600">Total:</td>
                     <td className="px-3 py-2 text-right font-mono font-bold text-red-600">Rs. {purchase.totalAmount.toLocaleString()}</td>
                   </tr>
                 </tfoot>
@@ -830,18 +1065,19 @@ const NewPurchaseModal: React.FC<NewPurchaseModalProps> = ({ products, suppliers
 
 // ─── Main PurchaseView ────────────────────────────────────────────────────────
 export const PurchaseView: React.FC = () => {
-  const { db, savePurchase, editPurchase, receivePurchase } = useApp();
-  const [showNew,         setShowNew]         = useState(false);
-  const [viewPurchase,    setViewPurchase]    = useState<PurchaseRecord | null>(null);
-  const [editingPurchase, setEditingPurchase] = useState<PurchaseRecord | null>(null);
+  const { db, savePurchase, editPurchase, receivePurchase, partialReceivePurchase } = useApp();
+  const [showNew,            setShowNew]            = useState(false);
+  const [viewPurchase,       setViewPurchase]       = useState<PurchaseRecord | null>(null);
+  const [editingPurchase,    setEditingPurchase]    = useState<PurchaseRecord | null>(null);
+  const [receivingPurchase,  setReceivingPurchase]  = useState<PurchaseRecord | null>(null);
 
   if (!db) return <div className="p-8 text-slate-400 text-sm">Loading purchases...</div>;
 
   const { purchases, products, suppliers, accounts } = db;
   const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  const handleReceive = async (id: string) => {
-    if (!confirm('Mark this purchase as received? This will update stock levels.')) return;
+  const handleFullReceive = async (id: string) => {
+    if (!confirm('Mark ALL remaining items as received? This will update stock levels for every outstanding item.')) return;
     await receivePurchase(id);
   };
 
@@ -863,20 +1099,20 @@ export const PurchaseView: React.FC = () => {
         <table className="w-full table-fixed">
           <colgroup>
             <col className="w-36" />
-            <col className="w-28" />
-            <col />
-            <col className="w-16" />
-            <col className="w-32" />
-            <col className="w-32" />
             <col className="w-24" />
-            <col className="w-40" />
+            <col />
+            <col className="w-32" />
+            <col className="w-28" />
+            <col className="w-28" />
+            <col className="w-28" />
+            <col className="w-44" />
           </colgroup>
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/60">
               <th className="px-4 py-3.5 text-left   text-[11px] font-bold text-slate-500 uppercase tracking-wider">Invoice No</th>
               <th className="px-4 py-3.5 text-left   text-[11px] font-bold text-slate-500 uppercase tracking-wider">Date</th>
               <th className="px-4 py-3.5 text-left   text-[11px] font-bold text-slate-500 uppercase tracking-wider">Supplier</th>
-              <th className="px-4 py-3.5 text-center text-[11px] font-bold text-slate-500 uppercase tracking-wider">Items</th>
+              <th className="px-4 py-3.5 text-center text-[11px] font-bold text-slate-500 uppercase tracking-wider">Stock Progress</th>
               <th className="px-4 py-3.5 text-right  text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total</th>
               <th className="px-4 py-3.5 text-right  text-[11px] font-bold text-slate-500 uppercase tracking-wider">Paid</th>
               <th className="px-4 py-3.5 text-center text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status</th>
@@ -891,87 +1127,115 @@ export const PurchaseView: React.FC = () => {
                 </td>
               </tr>
             )}
-            {purchases.map(pc => (
-              <tr key={pc.id} className="hover:bg-slate-50/50 transition-colors">
+            {purchases.map(pc => {
+              const totalOrdered  = pc.items.reduce((s, i) => s + i.qty, 0);
+              const totalReceived = pc.items.reduce((s, i) => s + (i.qtyReceived ?? (pc.status === 'received' ? i.qty : 0)), 0);
+              const pct           = totalOrdered > 0 ? Math.round((totalReceived / totalOrdered) * 100) : 0;
+              const isReceived    = pc.status === 'received';
+              const isPartial     = pc.status === 'partial';
 
-                {/* Invoice No */}
-                <td className="px-4 py-3.5">
-                  <span className="text-xs font-bold font-mono text-slate-800 truncate block">{pc.invoiceRef}</span>
-                </td>
+              return (
+                <tr key={pc.id} className="hover:bg-slate-50/50 transition-colors">
 
-                {/* Date */}
-                <td className="px-4 py-3.5 text-xs text-slate-500 whitespace-nowrap">
-                  {fmt(pc.date)}
-                </td>
+                  {/* Invoice No */}
+                  <td className="px-4 py-3.5">
+                    <span className="text-xs font-bold font-mono text-slate-800 truncate block">{pc.invoiceRef}</span>
+                  </td>
 
-                {/* Supplier */}
-                <td className="px-4 py-3.5 text-xs font-semibold text-slate-800 truncate">
-                  {pc.supplierName}
-                </td>
+                  {/* Date */}
+                  <td className="px-4 py-3.5 text-xs text-slate-500 whitespace-nowrap">
+                    {fmt(pc.date)}
+                  </td>
 
-                {/* Items count */}
-                <td className="px-4 py-3.5 text-center">
-                  <span className="text-xs text-slate-500 font-mono">{pc.items.length}</span>
-                </td>
+                  {/* Supplier */}
+                  <td className="px-4 py-3.5 text-xs font-semibold text-slate-800 truncate">
+                    {pc.supplierName}
+                  </td>
 
-                {/* Total */}
-                <td className="px-4 py-3.5 text-right">
-                  <span className="text-xs font-bold text-slate-800 font-mono">
-                    Rs.&nbsp;{pc.totalAmount.toLocaleString()}
-                  </span>
-                </td>
+                  {/* Stock progress */}
+                  <td className="px-4 py-3.5">
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${isReceived ? 'bg-emerald-500' : isPartial ? 'bg-blue-400' : 'bg-slate-300'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        {totalReceived}/{totalOrdered} units
+                      </span>
+                    </div>
+                  </td>
 
-                {/* Paid */}
-                <td className="px-4 py-3.5 text-right">
-                  <span className={`text-xs font-mono font-semibold ${
-                    (pc.amountPaid || 0) >= pc.totalAmount ? 'text-emerald-600' : 'text-slate-600'
-                  }`}>
-                    Rs.&nbsp;{(pc.amountPaid || 0).toLocaleString()}
-                  </span>
-                </td>
-
-                {/* Status — clickable when pending */}
-                <td className="px-4 py-3.5 text-center">
-                  {pc.status === 'received' ? (
-                    <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-green-100 text-green-700">
-                      <CheckCircle className="w-3 h-3" /> Received
+                  {/* Total */}
+                  <td className="px-4 py-3.5 text-right">
+                    <span className="text-xs font-bold text-slate-800 font-mono">
+                      Rs.&nbsp;{pc.totalAmount.toLocaleString()}
                     </span>
-                  ) : (
-                    <button
-                      onClick={() => handleReceive(pc.id)}
-                      title="Click to mark as received — updates inventory"
-                      className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700 hover:bg-green-100 hover:text-green-700 transition-colors cursor-pointer"
-                    >
-                      <CheckCircle className="w-3 h-3" /> Pending
-                    </button>
-                  )}
-                </td>
+                  </td>
 
-                {/* Actions */}
-                <td className="px-4 py-3.5">
-                  <div className="flex items-center justify-center gap-1.5">
-                    <button
-                      onClick={() => setViewPurchase(pc)}
-                      title="View details"
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap"
-                    >
-                      <Eye className="w-3 h-3" /> View
-                    </button>
-                    <button
-                      onClick={() => setEditingPurchase(pc)}
-                      title="Edit purchase order"
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap"
-                    >
-                      <Pencil className="w-3 h-3" /> Edit
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  {/* Paid */}
+                  <td className="px-4 py-3.5 text-right">
+                    <span className={`text-xs font-mono font-semibold ${
+                      (pc.amountPaid || 0) >= pc.totalAmount ? 'text-emerald-600' : 'text-slate-600'
+                    }`}>
+                      Rs.&nbsp;{(pc.amountPaid || 0).toLocaleString()}
+                    </span>
+                  </td>
+
+                  {/* Status badge */}
+                  <td className="px-4 py-3.5 text-center">
+                    {isReceived ? (
+                      <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700">
+                        <CheckCircle className="w-3 h-3" /> Received
+                      </span>
+                    ) : isPartial ? (
+                      <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-700">
+                        <PackageCheck className="w-3 h-3" /> Partial
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700">
+                        <Package className="w-3 h-3" /> Pending
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Actions */}
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        onClick={() => setViewPurchase(pc)}
+                        title="View details"
+                        className="inline-flex items-center gap-1 px-2 py-1.5 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap"
+                      >
+                        <Eye className="w-3 h-3" /> View
+                      </button>
+                      {!isReceived && (
+                        <button
+                          onClick={() => setReceivingPurchase(pc)}
+                          title="Receive stock (full or partial)"
+                          className="inline-flex items-center gap-1 px-2 py-1.5 border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap"
+                        >
+                          <PackageCheck className="w-3 h-3" /> Receive
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setEditingPurchase(pc)}
+                        title="Edit purchase order"
+                        className="inline-flex items-center gap-1 px-2 py-1.5 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-500 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap"
+                      >
+                        <Pencil className="w-3 h-3" /> Edit
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
+      {/* Modals */}
       {showNew && (
         <NewPurchaseModal
           products={products}
@@ -983,6 +1247,26 @@ export const PurchaseView: React.FC = () => {
       )}
       {viewPurchase && (
         <ViewModal purchase={viewPurchase} onClose={() => setViewPurchase(null)} />
+      )}
+      {receivingPurchase && (
+        <PartialReceiveModal
+          purchase={receivingPurchase}
+          onClose={() => setReceivingPurchase(null)}
+          onSave={async (id, receipts) => {
+            const result = await partialReceivePurchase(id, receipts);
+            // Refresh the local copy so progress bars update
+            if (result.success) {
+              setReceivingPurchase(prev => {
+                if (!prev) return null;
+                const updated = db.purchases.find(p => p.id === prev.id);
+                return updated || null;
+              });
+              // Close if no errors
+              if (!result.errors?.length) setReceivingPurchase(null);
+            }
+            return result;
+          }}
+        />
       )}
       {editingPurchase && (
         <EditPurchaseModal
