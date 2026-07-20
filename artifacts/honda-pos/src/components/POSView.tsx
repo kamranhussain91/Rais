@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useApp } from './AppContext';
-import { Product, SaleItem, SaleInvoice } from '../types';
+import { Product, SaleItem, SaleInvoice, Customer } from '../types';
 import {
   Search,
   Trash2,
@@ -12,6 +12,7 @@ import {
   Minus,
   Plus,
   X,
+  AlertCircle,
 } from 'lucide-react';
 
 export const POSView: React.FC = () => {
@@ -24,11 +25,15 @@ export const POSView: React.FC = () => {
   const [selectedBankAccountId, setSelectedBankAccountId] = useState<string>('cash_chest');
   const [amountPaid, setAmountPaid] = useState<number>(0);
 
+  // Customer state
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [customerName, setCustomerName] = useState<string>('Walk-in Customer');
   const [customerPhone, setCustomerPhone] = useState<string>('');
   const [customerAddress, setCustomerAddress] = useState<string>('');
   const [customerBikeModel, setCustomerBikeModel] = useState<string>('');
   const [showCustomerForm, setShowCustomerForm] = useState<boolean>(false);
+  const [customerSearch, setCustomerSearch] = useState<string>('');
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState<boolean>(false);
 
   const [manualSearch, setManualSearch] = useState<string>('');
   const [activeReceipt, setActiveReceipt] = useState<SaleInvoice | null>(null);
@@ -36,12 +41,25 @@ export const POSView: React.FC = () => {
   const [printFormat, setPrintFormat] = useState<'A4' | 'Thermal'>('Thermal');
 
   const searchRef = useRef<HTMLInputElement>(null);
+  const customerSearchRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { searchRef.current?.focus(); }, []);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowCustomerDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
   if (!db) return <div className="p-8 text-neutral-500">Loading terminal...</div>;
 
-  const { products, accounts } = db;
+  const { products, accounts, customers } = db;
 
   const filteredAccounts = accounts.filter(acc =>
     paymentMethod === 'Cash' ? acc.id === 'cash_chest' : acc.id !== 'cash_chest'
@@ -55,6 +73,34 @@ export const POSView: React.FC = () => {
       if (firstBank) setSelectedBankAccountId(firstBank.id);
     }
   }, [paymentMethod, accounts]);
+
+  // Customer search results
+  const customerResults = useMemo(() => {
+    if (!customerSearch.trim()) return [];
+    const q = customerSearch.toLowerCase();
+    return customers.filter(c =>
+      c.name.toLowerCase().includes(q) || c.phone.includes(customerSearch)
+    ).slice(0, 6);
+  }, [customers, customerSearch]);
+
+  const selectCustomer = (c: Customer) => {
+    setSelectedCustomerId(c.id);
+    setCustomerName(c.name);
+    setCustomerPhone(c.phone);
+    setCustomerAddress(c.address || '');
+    setCustomerBikeModel(c.bikeModel || '');
+    setCustomerSearch('');
+    setShowCustomerDropdown(false);
+  };
+
+  const clearCustomer = () => {
+    setSelectedCustomerId('');
+    setCustomerName('Walk-in Customer');
+    setCustomerPhone('');
+    setCustomerAddress('');
+    setCustomerBikeModel('');
+    setCustomerSearch('');
+  };
 
   const addToCart = (product: Product) => {
     if (product.stock <= 0) {
@@ -94,23 +140,43 @@ export const POSView: React.FC = () => {
   const cartCount = cartItems.reduce((s, i) => s + i.qty, 0);
   const change = amountPaid > cartFinal ? amountPaid - cartFinal : 0;
 
+  // Credit sale calculations
+  const effectivePaid = amountPaid > 0 ? Math.min(amountPaid, cartFinal) : cartFinal;
+  const creditDue = cartFinal > 0 && amountPaid > 0 && amountPaid < cartFinal
+    ? cartFinal - amountPaid
+    : 0;
+  const isCreditSale = creditDue > 0;
+  const isFullCredit = cartFinal > 0 && amountPaid === 0 && cartItems.length > 0 && !!customerPhone;
+
   const handleCheckout = async () => {
     if (cartItems.length === 0) { alert('Cart is empty.'); return; }
+    if ((isCreditSale || isFullCredit) && !customerPhone.trim()) {
+      alert('A phone number is required for credit / partial-payment sales.\nPlease enter the customer\'s phone number.');
+      return;
+    }
+
+    const resolvedAmountPaid = isFullCredit ? 0 : (amountPaid > 0 ? amountPaid : cartFinal);
+
     const invoice: SaleInvoice = {
       id: '', invoiceNumber: '', date: new Date().toISOString(),
-      customerId: 'Walk-in', customerName: customerName || 'Walk-in Customer',
-      customerPhone: customerPhone || 'N/A', customerAddress, customerBikeModel,
+      customerId: selectedCustomerId || 'Walk-in',
+      customerName: customerName || 'Walk-in Customer',
+      customerPhone: customerPhone || 'N/A',
+      customerAddress, customerBikeModel,
       items: cartItems, subtotal: cartSubtotal, discount, finalAmount: cartFinal,
       paymentMethod, bankAccountId: selectedBankAccountId, profit: 0,
       terminalId, taxRate, taxAmount: cartTaxAmount,
+      amountPaid: resolvedAmountPaid,
+      amountDue: Math.max(0, cartFinal - resolvedAmountPaid),
+      paymentStatus: resolvedAmountPaid >= cartFinal ? 'Paid' : 'Partial',
     } as SaleInvoice;
+
     const saved = await saveSaleInvoice(invoice);
     if (saved) {
       setActiveReceipt(saved);
       setIsReceiptModalOpen(true);
       setCartItems([]); setDiscount(0); setAmountPaid(0);
-      setCustomerName('Walk-in Customer'); setCustomerPhone('');
-      setCustomerAddress(''); setCustomerBikeModel('');
+      clearCustomer();
       setShowCustomerForm(false);
     } else {
       alert('Error completing sale.');
@@ -124,13 +190,13 @@ export const POSView: React.FC = () => {
       p.barcode.toLowerCase().includes(q) || p.compatibility.toLowerCase().includes(q);
   });
 
+  const isWalkIn = !customerPhone.trim() && customerName === 'Walk-in Customer';
+
   return (
     <div className="flex h-full" id="pos-view-container">
 
       {/* ── LEFT: PRODUCT CATALOG ── */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-
-        {/* Search bar */}
         <div className="px-5 pt-4 pb-3 bg-slate-50 border-b border-slate-200 shrink-0">
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -145,7 +211,6 @@ export const POSView: React.FC = () => {
           </div>
         </div>
 
-        {/* Product grid — scrolls independently */}
         <div className="flex-1 overflow-y-auto p-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
             {searchedCatalog.map(p => {
@@ -195,32 +260,106 @@ export const POSView: React.FC = () => {
         </div>
       </div>
 
-      {/* ── RIGHT: CHECKOUT PANEL (never scrolls as a whole) ── */}
+      {/* ── RIGHT: CHECKOUT PANEL ── */}
       <div className="w-[300px] xl:w-[320px] shrink-0 flex flex-col bg-white border-l border-slate-200 overflow-hidden">
 
         {/* Customer selector */}
         <div className="px-4 pt-4 pb-3 border-b border-slate-100 shrink-0">
           <button
-            className="w-full flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-xl text-sm text-slate-600 hover:border-red-300 hover:bg-red-50/30 transition-all"
+            className={`w-full flex items-center gap-2 px-3 py-2 border rounded-xl text-sm transition-all
+              ${showCustomerForm
+                ? 'border-red-400 bg-red-50/40 text-slate-700'
+                : 'border-slate-200 text-slate-600 hover:border-red-300 hover:bg-red-50/30'
+              }`}
             onClick={() => setShowCustomerForm(v => !v)}
           >
             <User className="w-4 h-4 text-slate-400 shrink-0" />
-            <span className="flex-1 text-left font-medium truncate text-[13px]">{customerName}</span>
+            <span className="flex-1 text-left font-medium truncate text-[13px]">
+              {customerName}
+              {(isCreditSale || isFullCredit) && !isWalkIn && (
+                <span className="ml-1.5 text-[10px] text-amber-600 font-bold uppercase tracking-wide">Credit</span>
+              )}
+            </span>
+            {!isWalkIn && (
+              <button
+                onClick={e => { e.stopPropagation(); clearCustomer(); setShowCustomerForm(false); }}
+                className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-100 text-slate-400 hover:text-red-500 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
             <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${showCustomerForm ? 'rotate-180' : ''}`} />
           </button>
+
           {showCustomerForm && (
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {[
-                { ph: 'Name', val: customerName === 'Walk-in Customer' ? '' : customerName, set: (v: string) => setCustomerName(v || 'Walk-in Customer') },
-                { ph: 'Phone', val: customerPhone, set: setCustomerPhone },
-                { ph: 'Bike Model', val: customerBikeModel, set: setCustomerBikeModel },
-                { ph: 'Address', val: customerAddress, set: setCustomerAddress },
-              ].map(f => (
-                <input key={f.ph} type="text" placeholder={f.ph} value={f.val}
-                  onChange={e => f.set(e.target.value)}
-                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400/20 bg-slate-50 col-span-1"
-                />
-              ))}
+            <div className="mt-2 space-y-2">
+              {/* Customer search dropdown */}
+              <div className="relative" ref={dropdownRef}>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                  <input
+                    ref={customerSearchRef}
+                    type="text"
+                    placeholder="Search existing customer..."
+                    className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400/20 bg-white"
+                    value={customerSearch}
+                    onChange={e => { setCustomerSearch(e.target.value); setShowCustomerDropdown(true); }}
+                    onFocus={() => customerSearch && setShowCustomerDropdown(true)}
+                  />
+                </div>
+                {showCustomerDropdown && customerResults.length > 0 && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
+                    {customerResults.map(c => (
+                      <button
+                        key={c.id}
+                        className="w-full text-left px-3 py-2 hover:bg-red-50 transition-colors border-b border-slate-50 last:border-0"
+                        onMouseDown={() => selectCustomer(c)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-[12px] font-semibold text-slate-800">{c.name}</p>
+                            <p className="text-[10px] text-slate-400 font-mono">{c.phone}</p>
+                          </div>
+                          <div className="text-right">
+                            {c.bikeModel && <p className="text-[10px] text-slate-500">{c.bikeModel}</p>}
+                            {(c.creditBalance ?? 0) > 0 && (
+                              <p className="text-[10px] text-amber-600 font-bold font-mono">Due: Rs.{(c.creditBalance ?? 0).toLocaleString()}</p>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Manual fields */}
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { ph: 'Name *', val: customerName === 'Walk-in Customer' ? '' : customerName, set: (v: string) => setCustomerName(v || 'Walk-in Customer') },
+                  { ph: 'Phone *', val: customerPhone, set: setCustomerPhone },
+                  { ph: 'Bike Model', val: customerBikeModel, set: setCustomerBikeModel },
+                  { ph: 'Address', val: customerAddress, set: setCustomerAddress },
+                ].map(f => (
+                  <input key={f.ph} type="text" placeholder={f.ph} value={f.val}
+                    onChange={e => { f.set(e.target.value); setSelectedCustomerId(''); }}
+                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400/20 bg-slate-50 col-span-1"
+                  />
+                ))}
+              </div>
+
+              {/* Show existing customer's credit balance if selected */}
+              {selectedCustomerId && (() => {
+                const c = customers.find(x => x.id === selectedCustomerId);
+                return c && (c.creditBalance ?? 0) > 0 ? (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 border border-amber-200 rounded-lg">
+                    <AlertCircle className="w-3 h-3 text-amber-500 shrink-0" />
+                    <p className="text-[11px] text-amber-700 font-semibold">
+                      Existing credit due: <span className="font-mono">Rs. {(c.creditBalance ?? 0).toLocaleString()}</span>
+                    </p>
+                  </div>
+                ) : null;
+              })()}
             </div>
           )}
         </div>
@@ -244,7 +383,7 @@ export const POSView: React.FC = () => {
           </div>
         </div>
 
-        {/* Cart items — scrolls within right panel */}
+        {/* Cart items */}
         <div className="flex-1 overflow-y-auto">
           {cartItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-400 select-none px-4">
@@ -288,7 +427,7 @@ export const POSView: React.FC = () => {
           )}
         </div>
 
-        {/* Checkout footer — always visible, never scrolls */}
+        {/* Checkout footer */}
         <div className="shrink-0 border-t border-slate-100 bg-white">
 
           {/* Totals */}
@@ -311,6 +450,26 @@ export const POSView: React.FC = () => {
               <span className="text-sm font-semibold text-slate-700">Total</span>
               <span className="text-xl font-black font-mono text-red-600">Rs. {cartFinal.toLocaleString()}</span>
             </div>
+
+            {/* Credit / partial breakdown */}
+            {isCreditSale && (
+              <>
+                <div className="flex justify-between text-xs text-emerald-600 font-semibold">
+                  <span>Paid Now</span>
+                  <span className="font-mono">Rs. {amountPaid.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-xs text-amber-600 font-bold">
+                  <span>Credit Due</span>
+                  <span className="font-mono">Rs. {creditDue.toLocaleString()}</span>
+                </div>
+              </>
+            )}
+            {isFullCredit && (
+              <div className="flex items-center gap-1.5 text-xs text-amber-600 font-bold bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>Full credit — Rs. {cartFinal.toLocaleString()} goes on customer tab</span>
+              </div>
+            )}
             {change > 0 && (
               <div className="flex justify-between text-xs text-emerald-600 font-semibold">
                 <span>Change</span>
@@ -334,17 +493,22 @@ export const POSView: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1">Amount Paid</label>
+              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
+                Amount Paid {isWalkIn ? '' : <span className="text-slate-300">(0 = full credit)</span>}
+              </label>
               <input
                 type="number"
-                className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400/20"
-                placeholder="0"
+                className={`w-full px-2.5 py-1.5 border rounded-lg text-xs font-mono outline-none focus:ring-1 transition-colors
+                  ${isCreditSale
+                    ? 'bg-amber-50 border-amber-300 text-amber-800 focus:border-amber-400 focus:ring-amber-400/20'
+                    : 'bg-slate-50 border-slate-200 focus:border-red-400 focus:ring-red-400/20'
+                  }`}
+                placeholder={`Full: ${cartFinal.toLocaleString()}`}
                 value={amountPaid === 0 ? '' : amountPaid}
                 onChange={e => setAmountPaid(Math.max(0, Number(e.target.value)))}
               />
             </div>
 
-            {/* Settings row */}
             <div>
               <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1">Terminal</label>
               <select
@@ -388,10 +552,22 @@ export const POSView: React.FC = () => {
           <div className="px-4 pb-4">
             <button
               onClick={handleCheckout}
-              className="w-full py-3 bg-red-600 hover:bg-red-700 active:scale-[0.99] text-white rounded-xl text-sm font-bold shadow-md shadow-red-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className={`w-full py-3 active:scale-[0.99] text-white rounded-xl text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer
+                ${(isCreditSale || isFullCredit)
+                  ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/25'
+                  : 'bg-red-600 hover:bg-red-700 shadow-red-600/20'
+                }`}
             >
-              <CreditCard className="w-4 h-4" />
-              Complete Sale
+              {(isCreditSale || isFullCredit)
+                ? <AlertCircle className="w-4 h-4" />
+                : <CreditCard className="w-4 h-4" />
+              }
+              {isFullCredit
+                ? 'Complete — Full Credit Sale'
+                : isCreditSale
+                  ? `Complete — Rs.${amountPaid.toLocaleString()} Paid`
+                  : 'Complete Sale'
+              }
             </button>
           </div>
         </div>
@@ -403,7 +579,7 @@ export const POSView: React.FC = () => {
           <div className={`bg-white rounded-2xl shadow-2xl w-full ${printFormat === 'A4' ? 'max-w-4xl' : 'max-w-lg'} border border-neutral-100 flex flex-col no-print`}
             style={{ maxHeight: 'calc(100vh - 2rem)' }}>
 
-            {/* ── TOP BAR: format selector ── */}
+            {/* TOP BAR */}
             <div className="px-5 py-3 border-b border-neutral-100 bg-neutral-50 rounded-t-2xl flex items-center gap-2 shrink-0 no-print">
               <span className="text-xs font-semibold text-neutral-400 mr-1">Format:</span>
               {(['Thermal', 'A4'] as const).map(fmt => (
@@ -416,9 +592,12 @@ export const POSView: React.FC = () => {
               <div className="ml-auto text-xs text-neutral-400 font-mono font-semibold">
                 #{activeReceipt.invoiceNumber}
               </div>
+              {(activeReceipt.paymentStatus === 'Partial' || (activeReceipt as any).amountDue > 0) && (
+                <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full uppercase">Credit</span>
+              )}
             </div>
 
-            {/* ── SCROLLABLE RECEIPT CONTENT ── */}
+            {/* SCROLLABLE RECEIPT */}
             <div className="overflow-y-auto flex-1 print-area bg-white">
               {printFormat === 'Thermal' ? (
                 <div className="mx-auto text-neutral-800 text-[11px] font-mono leading-relaxed" style={{ maxWidth: '300px' }}>
@@ -454,7 +633,15 @@ export const POSView: React.FC = () => {
                     {activeReceipt.discount > 0 && <div className="flex justify-between text-rose-600"><span>Discount:</span><span>-Rs.{activeReceipt.discount}</span></div>}
                     <div className="flex justify-between"><span>GST ({activeReceipt.taxRate ?? 18}%):</span><span>+Rs.{activeReceipt.taxAmount ?? 0}</span></div>
                     <div className="flex justify-between font-bold text-xs pt-1 border-t border-neutral-100"><span>TOTAL:</span><span>Rs.{activeReceipt.finalAmount}</span></div>
-                    <div className="flex justify-between italic text-[9px] text-neutral-500 mt-1"><span>Method:</span><span>{activeReceipt.paymentMethod}</span></div>
+                    {/* Payment breakdown */}
+                    {(activeReceipt.paymentStatus === 'Partial' || ((activeReceipt as any).amountDue ?? 0) > 0) ? (
+                      <>
+                        <div className="flex justify-between text-emerald-700 font-bold"><span>PAID NOW:</span><span>Rs.{(activeReceipt as any).amountPaid ?? activeReceipt.finalAmount}</span></div>
+                        <div className="flex justify-between text-amber-700 font-bold border border-dashed border-amber-400 px-1 py-0.5 rounded"><span>CREDIT DUE:</span><span>Rs.{(activeReceipt as any).amountDue ?? 0}</span></div>
+                      </>
+                    ) : (
+                      <div className="flex justify-between italic text-[9px] text-neutral-500 mt-1"><span>Method:</span><span>{activeReceipt.paymentMethod}</span></div>
+                    )}
                   </div>
                   <div className="border-b border-dashed border-neutral-300 my-2" />
                   <div className="p-2 bg-neutral-50 border border-neutral-200 rounded text-[9px] space-y-0.5 font-mono">
@@ -475,7 +662,7 @@ export const POSView: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="text-neutral-800 text-xs font-sans leading-relaxed">
+                <div className="text-neutral-800 text-xs font-sans leading-relaxed p-6">
                   <div className="flex justify-between items-start">
                     <div>
                       <h1 className="text-xl font-black text-red-600 uppercase tracking-widest">RAIS MOTOR LABS & PARTS</h1>
@@ -483,7 +670,9 @@ export const POSView: React.FC = () => {
                       <p className="text-neutral-400 mt-2 text-xs">Allama Iqbal Road, Dharampura, Lahore<br />Tel: 042-36814912 | NTN: 7721590-3</p>
                     </div>
                     <div className="text-right">
-                      <div className="px-3 py-1 bg-red-50 inline-block rounded text-red-700 font-extrabold uppercase text-xs border border-red-100">CASH TRANSACTION SLIP</div>
+                      <div className={`px-3 py-1 inline-block rounded font-extrabold uppercase text-xs border ${(activeReceipt.paymentStatus === 'Partial' || ((activeReceipt as any).amountDue ?? 0) > 0) ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                        {(activeReceipt.paymentStatus === 'Partial' || ((activeReceipt as any).amountDue ?? 0) > 0) ? 'CREDIT SALE SLIP' : 'CASH TRANSACTION SLIP'}
+                      </div>
                       <p className="text-neutral-500 mt-3 font-mono text-[10px]">
                         <strong>Invoice #:</strong> {activeReceipt.invoiceNumber}<br />
                         <strong>Date:</strong> {new Date(activeReceipt.date).toLocaleString()}
@@ -555,6 +744,21 @@ export const POSView: React.FC = () => {
                       <div className="flex justify-between text-neutral-500"><span>Taxable:</span><span className="font-mono">Rs.{Math.max(0, activeReceipt.subtotal - activeReceipt.discount)}</span></div>
                       <div className="flex justify-between text-neutral-500 font-bold"><span>GST ({activeReceipt.taxRate ?? 18}%):</span><span className="font-mono">+Rs.{activeReceipt.taxAmount ?? 0}</span></div>
                       <div className="flex justify-between font-bold text-sm text-neutral-800 pt-2 border-t border-neutral-200"><span>GRAND TOTAL:</span><span className="font-mono text-red-600 text-base">Rs.{activeReceipt.finalAmount}</span></div>
+                      {/* Credit breakdown */}
+                      {((activeReceipt as any).amountDue ?? 0) > 0 ? (
+                        <>
+                          <div className="flex justify-between text-emerald-600 font-semibold pt-1 border-t border-neutral-100">
+                            <span>Paid Now ({activeReceipt.paymentMethod}):</span>
+                            <span className="font-mono font-bold">Rs.{(activeReceipt as any).amountPaid}</span>
+                          </div>
+                          <div className="flex justify-between bg-amber-50 border border-amber-200 rounded px-2 py-1 text-amber-700 font-bold">
+                            <span>CREDIT DUE:</span>
+                            <span className="font-mono">Rs.{(activeReceipt as any).amountDue}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex justify-between text-neutral-400 text-[10px]"><span>Payment:</span><span className="font-mono">{activeReceipt.paymentMethod}</span></div>
+                      )}
                     </div>
                   </div>
                   <div className="border-b border-neutral-200 my-6" />
@@ -572,7 +776,7 @@ export const POSView: React.FC = () => {
               )}
             </div>
 
-            {/* ── STICKY BOTTOM ACTION BAR ── always visible ── */}
+            {/* STICKY BOTTOM */}
             <div className="shrink-0 border-t border-neutral-200 bg-white rounded-b-2xl px-5 py-4 flex items-center gap-3 no-print">
               <button
                 className="flex-1 py-3 bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white rounded-xl text-sm font-bold shadow-md shadow-red-600/20 flex items-center justify-center gap-2 cursor-pointer transition-all"

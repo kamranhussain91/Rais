@@ -47,6 +47,7 @@ interface AppContextType {
   saveCustomer: (customer: Customer) => Promise<boolean>;
   updateCustomer: (id: string, customer: Partial<Customer>) => Promise<boolean>;
   deleteCustomer: (id: string) => Promise<boolean>;
+  recordCreditPayment: (customerId: string, amount: number, note: string, bankAccountId?: string) => Promise<boolean>;
   saveUser: (user: User) => Promise<boolean>;
   deleteUser: (id: string) => Promise<boolean>;
   
@@ -548,6 +549,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (err) { console.error(err); return false; }
   };
 
+  const recordCreditPayment = async (customerId: string, amount: number, note: string, bankAccountId?: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/customers/${customerId}/payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount,
+          note,
+          bankAccountId: bankAccountId || 'cash_chest',
+          auth: { userId: currentUser?.id, username: currentUser?.username }
+        })
+      });
+      if (!res.ok) throw new Error('Failed to record credit payment');
+      const result = await res.json();
+      if (result.success) { setDb(result.db); return true; }
+      return false;
+    } catch (err) { console.error(err); return false; }
+  };
+
   return (
     <AppContext.Provider value={{
       db,
@@ -578,6 +598,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       saveCustomer,
       updateCustomer,
       deleteCustomer,
+      recordCreditPayment,
       saveUser,
       deleteUser,
       terminalId,

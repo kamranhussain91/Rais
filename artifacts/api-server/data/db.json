@@ -612,6 +612,26 @@
   ],
   "purchases": [
     {
+      "id": "pur_1784549775848",
+      "invoiceRef": "PO-458760",
+      "date": "2026-07-20T12:16:15.848Z",
+      "supplierName": "Honda Atlas Parts Ltd",
+      "items": [
+        {
+          "productId": "prod_2",
+          "name": "Honda Genuine Engine Oil 4T 20W-50 (1L)",
+          "partNumber": "08C35-20W50",
+          "purchasePrice": 920,
+          "qty": 108
+        }
+      ],
+      "totalAmount": 99360,
+      "amountPaid": 100000,
+      "paymentMethod": "Bank Transfer",
+      "bankAccountId": "bank_2",
+      "status": "pending"
+    },
+    {
       "id": "pur_1783592747976",
       "invoiceRef": "PO-638347",
       "date": "2026-07-09T10:25:47.976Z",
@@ -988,7 +1008,7 @@
       "id": "bank_2",
       "bankName": "Bank Alfalah POS",
       "accountNumber": "5566-100234-88",
-      "balance": 74500
+      "balance": -25500
     },
     {
       "id": "cash_chest",
@@ -998,6 +1018,17 @@
     }
   ],
   "ledger": [
+    {
+      "id": "led_1784549775848",
+      "bankAccountId": "bank_2",
+      "bankName": "Bank Alfalah POS",
+      "date": "2026-07-20T12:16:15.848Z",
+      "type": "Debit",
+      "amount": 100000,
+      "description": "Purchase PO-458760 (Honda Atlas Parts Ltd)",
+      "balanceAfter": -25500,
+      "referenceId": "pur_1784549775848"
+    },
     {
       "id": "led_1783968435444",
       "bankAccountId": "cash_chest",

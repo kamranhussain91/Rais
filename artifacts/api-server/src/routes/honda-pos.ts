@@ -433,6 +433,16 @@ router.post("/sales", async (req, res) => {
   });
   invoice.profit = Math.max(0, profit - invoice.discount);
 
+  // ── Credit / partial payment handling ────────────────────────────────────
+  const requestedPaid = (invoice as any).amountPaid !== undefined
+    ? Number((invoice as any).amountPaid)
+    : invoice.finalAmount; // default: fully paid (backward-compat)
+  const effectiveAmountPaid = Math.min(Math.max(0, requestedPaid), invoice.finalAmount);
+  const amountDue = Math.round(invoice.finalAmount - effectiveAmountPaid);
+  (invoice as any).amountPaid    = effectiveAmountPaid;
+  (invoice as any).amountDue     = amountDue;
+  (invoice as any).paymentStatus = amountDue <= 0 ? "Paid" : "Partial";
+
   // Upsert customer
   if (invoice.customerPhone && invoice.customerId === "Walk-in") {
     const existing = db.customers.find((c) => c.phone === invoice.customerPhone);
@@ -444,23 +454,36 @@ router.post("/sales", async (req, res) => {
     }
   }
 
+  // Add outstanding due to customer's credit balance
+  if (amountDue > 0 && invoice.customerId && invoice.customerId !== "Walk-in") {
+    const custIdx = db.customers.findIndex((c) => c.id === invoice.customerId);
+    if (custIdx !== -1) {
+      db.customers[custIdx].creditBalance = (db.customers[custIdx].creditBalance ?? 0) + amountDue;
+    }
+  }
+
   await updateInvoiceQRCodeAndHash(invoice, req.get("host"));
   db.invoices.push(invoice);
 
   if (!db.fbrSyncQueue) db.fbrSyncQueue = [];
   db.fbrSyncQueue.push({ id: "q_" + Date.now(), invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber, status: "Pending", retryCount: 0 });
   if (!db.terminalSyncLogs) db.terminalSyncLogs = [];
-  db.terminalSyncLogs.push({ id: "ts_" + Date.now(), terminalId, actionType: "SALE", status: "SUCCESS", timestamp: new Date().toISOString(), details: `Receipt ${invoice.invoiceNumber}. Total: Rs. ${invoice.finalAmount}` });
+  db.terminalSyncLogs.push({ id: "ts_" + Date.now(), terminalId, actionType: "SALE", status: "SUCCESS", timestamp: new Date().toISOString(), details: `Receipt ${invoice.invoiceNumber}. Total: Rs. ${invoice.finalAmount}${amountDue > 0 ? ` | Paid: Rs. ${effectiveAmountPaid} | Due: Rs. ${amountDue}` : ""}` });
 
+  // Credit only the amount actually received into the bank account
   const targetAccId = invoice.paymentMethod === "Cash" ? "cash_chest" : (invoice.bankAccountId || "bank_2");
   const accIdx = db.accounts.findIndex((a) => a.id === targetAccId);
-  if (accIdx !== -1) {
-    db.accounts[accIdx].balance += invoice.finalAmount;
-    const entry: BankLedgerEntry = { id: "led_" + Date.now(), bankAccountId: targetAccId, bankName: db.accounts[accIdx].bankName, date: invoice.date, type: "Credit", amount: invoice.finalAmount, description: `Sale [${terminalId}] ${invoice.invoiceNumber} (${invoice.customerName})`, balanceAfter: db.accounts[accIdx].balance, referenceId: invoice.id };
+  if (accIdx !== -1 && effectiveAmountPaid > 0) {
+    db.accounts[accIdx].balance += effectiveAmountPaid;
+    const ledgerNote = amountDue > 0
+      ? `Credit Sale [${terminalId}] ${invoice.invoiceNumber} (${invoice.customerName}) — Paid Rs.${effectiveAmountPaid}, Due Rs.${amountDue}`
+      : `Sale [${terminalId}] ${invoice.invoiceNumber} (${invoice.customerName})`;
+    const entry: BankLedgerEntry = { id: "led_" + Date.now(), bankAccountId: targetAccId, bankName: db.accounts[accIdx].bankName, date: invoice.date, type: "Credit", amount: effectiveAmountPaid, description: ledgerNote, balanceAfter: db.accounts[accIdx].balance, referenceId: invoice.id };
     db.ledger.unshift(entry);
   }
 
-  logActivity(userId, username, `Created invoice ${invoice.invoiceNumber} on ${terminalId}. Total: Rs. ${invoice.finalAmount}`);
+  const creditNote = amountDue > 0 ? ` | Credit: Rs. ${amountDue} added to customer` : "";
+  logActivity(userId, username, `Created invoice ${invoice.invoiceNumber} on ${terminalId}. Total: Rs. ${invoice.finalAmount}${creditNote}`);
   writeDB(db);
   invalidateAnalyticsCache();
   res.json({ success: true, db, invoice });
@@ -932,6 +955,42 @@ router.delete("/customers/:id", (req, res) => {
   const name = db.customers[idx].name;
   db.customers.splice(idx, 1);
   logActivity(userId, username, `Customer deleted: ${name}`);
+  writeDB(db);
+  res.json({ success: true, db });
+});
+
+// POST record credit payment against a customer (reduces their creditBalance)
+router.post("/customers/:id/payment", (req, res) => {
+  const db = readDB();
+  const { userId, username } = req.body.auth || { userId: "1", username: "admin" };
+  const idx = db.customers.findIndex((c) => c.id === req.params.id);
+  if (idx === -1) { res.status(404).json({ error: "Customer not found" }); return; }
+  const amount = Math.max(0, Number(req.body.amount) || 0);
+  const note   = req.body.note || "Manual credit payment";
+  if (amount <= 0) { res.status(400).json({ error: "Amount must be greater than 0" }); return; }
+  const prev = db.customers[idx].creditBalance ?? 0;
+  db.customers[idx].creditBalance = Math.max(0, prev - amount);
+
+  // Credit the bank/cash account with the received amount
+  const bankAccountId = req.body.bankAccountId || "cash_chest";
+  const accIdx = db.accounts.findIndex((a) => a.id === bankAccountId);
+  if (accIdx !== -1) {
+    db.accounts[accIdx].balance += amount;
+    const entry: BankLedgerEntry = {
+      id: "led_" + Date.now(),
+      bankAccountId,
+      bankName: db.accounts[accIdx].bankName,
+      date: new Date().toISOString(),
+      type: "Credit",
+      amount,
+      description: `Credit payment from ${db.customers[idx].name} — ${note}`,
+      balanceAfter: db.accounts[accIdx].balance,
+      referenceId: db.customers[idx].id,
+    };
+    db.ledger.unshift(entry);
+  }
+
+  logActivity(userId, username, `Credit payment Rs.${amount} from customer ${db.customers[idx].name}. Prev balance: Rs.${prev} → Rs.${db.customers[idx].creditBalance}`);
   writeDB(db);
   res.json({ success: true, db });
 });

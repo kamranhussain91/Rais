@@ -71,6 +71,11 @@ export interface SaleInvoice {
   fbr_hash?: string;
   fbr_verified_status?: boolean | string;
   fbr_response_json?: string;
+
+  // Credit / partial payment tracking
+  amountPaid?: number;
+  amountDue?: number;
+  paymentStatus?: 'Paid' | 'Partial';
 }
 
 export interface PurchaseItem {
