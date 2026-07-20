@@ -42,6 +42,8 @@ interface AppContextType {
   updateExpense: (id: string, updates: Partial<Expense>) => Promise<boolean>;
   deleteExpense: (id: string) => Promise<boolean>;
   saveBankTransaction: (id: string, type: 'Credit' | 'Debit', amount: number, description: string) => Promise<boolean>;
+  createBankAccount: (bankName: string, accountNumber: string, initialBalance: number) => Promise<boolean>;
+  deleteBankAccount: (id: string) => Promise<boolean>;
   triggerBackup: (type: 'Auto' | 'Manual') => Promise<boolean>;
   triggerRestore: (backupData: AppDatabase) => Promise<boolean>;
   saveCustomer: (customer: Customer) => Promise<boolean>;
@@ -460,6 +462,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const createBankAccount = async (bankName: string, accountNumber: string, initialBalance: number): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/bank-accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bankName, accountNumber, initialBalance, auth: { userId: currentUser?.id, username: currentUser?.username } })
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Failed'); }
+      const result = await res.json();
+      if (result.success) { setDb(result.db); return true; }
+      return false;
+    } catch (err) { console.error(err); return false; }
+  };
+
+  const deleteBankAccount = async (id: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/bank-accounts/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ auth: { userId: currentUser?.id, username: currentUser?.username } })
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Failed'); }
+      const result = await res.json();
+      if (result.success) { setDb(result.db); return true; }
+      return false;
+    } catch (err) { console.error(err); return false; }
+  };
+
   const triggerBackup = async (type: 'Auto' | 'Manual'): Promise<boolean> => {
     try {
       const res = await fetch('/api/backup/create', {
@@ -593,6 +623,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateExpense,
       deleteExpense,
       saveBankTransaction,
+      createBankAccount,
+      deleteBankAccount,
       triggerBackup,
       triggerRestore,
       saveCustomer,

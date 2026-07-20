@@ -921,6 +921,52 @@ router.post("/bank-accounts/transaction", (req, res) => {
   res.json({ success: true, db });
 });
 
+// POST create bank account
+router.post("/bank-accounts", (req, res) => {
+  const db = readDB();
+  const { bankName, accountNumber, initialBalance } = req.body;
+  const { userId, username } = req.body.auth || { userId: "1", username: "admin" };
+  if (!bankName?.trim() || !accountNumber?.trim()) {
+    res.status(400).json({ error: "Bank name and account number are required" });
+    return;
+  }
+  const id = "bank_" + Date.now();
+  const startBalance = Math.max(0, parseFloat(initialBalance) || 0);
+  db.accounts.push({ id, bankName: bankName.trim(), accountNumber: accountNumber.trim(), balance: startBalance });
+  if (startBalance > 0) {
+    db.ledger.unshift({
+      id: "led_" + Date.now(),
+      bankAccountId: id,
+      bankName: bankName.trim(),
+      date: new Date().toISOString(),
+      type: "Credit",
+      amount: startBalance,
+      description: `Opening balance for ${bankName.trim()}`,
+      balanceAfter: startBalance,
+    });
+  }
+  logActivity(userId, username, `Bank account added: ${bankName.trim()} (${accountNumber.trim()})`);
+  writeDB(db);
+  res.json({ success: true, db });
+});
+
+// DELETE bank account
+router.delete("/bank-accounts/:id", (req, res) => {
+  const db = readDB();
+  const { userId, username } = (req as any).body?.auth || { userId: "1", username: "admin" };
+  const idx = db.accounts.findIndex((a) => a.id === req.params.id);
+  if (idx === -1) { res.status(404).json({ error: "Account not found" }); return; }
+  if (db.accounts[idx].balance !== 0) {
+    res.status(400).json({ error: "Cannot delete an account with a non-zero balance. Transfer or clear the balance first." });
+    return;
+  }
+  const name = db.accounts[idx].bankName;
+  db.accounts.splice(idx, 1);
+  logActivity(userId, username, `Bank account deleted: ${name}`);
+  writeDB(db);
+  res.json({ success: true, db });
+});
+
 // POST create customer
 router.post("/customers", (req, res) => {
   const db = readDB();
