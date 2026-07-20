@@ -14,7 +14,7 @@
       "username": "cashier",
       "role": "Cashier",
       "name": "Cashier One",
-      "password": "cashier",
+      "password": "admin",
       "status": "Active",
       "lastLogin": "2026-06-02T08:30:00.000Z"
     }
@@ -1088,6 +1088,14 @@
   ],
   "expenses": [
     {
+      "id": "exp_1784553501801",
+      "date": "2026-07-20T13:18:21.801Z",
+      "category": "Utilities",
+      "amount": 5000,
+      "description": "Bill",
+      "bankAccountId": "bank_1784552761514"
+    },
+    {
       "id": "exp_1783592929654",
       "date": "2026-07-09T10:28:49.654Z",
       "category": "Rent",
@@ -1134,7 +1142,7 @@
       "id": "cash_chest",
       "bankName": "Cash-in-Hand Drawer",
       "accountNumber": "CASH-PRIMARY",
-      "balance": 55525
+      "balance": 50525
     },
     {
       "id": "bank_1784552761514",
@@ -1144,6 +1152,17 @@
     }
   ],
   "ledger": [
+    {
+      "id": "led_1784553501801",
+      "bankAccountId": "cash_chest",
+      "bankName": "Cash-in-Hand Drawer",
+      "date": "2026-07-20T13:18:21.801Z",
+      "type": "Debit",
+      "amount": 5000,
+      "description": "Expense: Utilities - Bill",
+      "balanceAfter": 50525,
+      "referenceId": "exp_1784553501801"
+    },
     {
       "id": "led_1784552761514",
       "bankAccountId": "bank_1784552761514",

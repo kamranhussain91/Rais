@@ -435,7 +435,8 @@ const NewServiceModal: React.FC<NewServiceModalProps> = ({ onClose, onSave, onBo
 
 // ─── Main WorkshopView ────────────────────────────────────────────────────────
 export const WorkshopView: React.FC = () => {
-  const { db, saveServiceRecord, updateServiceRecord } = useApp();
+  const { db, saveServiceRecord, updateServiceRecord, currentUser } = useApp();
+  const canEdit = currentUser?.role !== 'Cashier';
 
   const [search,          setSearch]        = useState('');
   const [filterType,      setFilterType]    = useState<ServiceType | 'all'>('all');
@@ -607,13 +608,15 @@ export const WorkshopView: React.FC = () => {
                   </td>
                   <td className="px-5 py-3.5 text-center">
                     <div className="flex items-center justify-center gap-1.5">
-                      <button
-                        onClick={() => setEditingService(srv)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-all cursor-pointer"
-                        title="Edit service record"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
+                      {canEdit && (
+                        <button
+                          onClick={() => setEditingService(srv)}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-all cursor-pointer"
+                          title="Edit service record"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       <button
                         onClick={() => setReceipt(srv)}
                         className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:border-red-300 hover:bg-red-50 text-slate-400 hover:text-red-600 transition-all cursor-pointer"

@@ -213,36 +213,34 @@ export const InventoryView: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleOpenEdit(p)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all cursor-pointer"
-                      title="Edit product"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                    </button>
-                    {confirmDeleteId === p.id ? (
+                  {/* Actions — admin/manager only */}
+                  {isUserAdmin && (
+                    <div className="flex items-center gap-1">
                       <button
-                        onClick={() => handleDelete(p.id)}
-                        className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded-lg cursor-pointer"
+                        onClick={() => handleOpenEdit(p)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all cursor-pointer"
+                        title="Edit product"
                       >
-                        Sure?
+                        <Edit3 className="w-3.5 h-3.5" />
                       </button>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          if (!isUserAdmin) { alert('Only administrators can delete products.'); return; }
-                          setConfirmDeleteId(p.id);
-                          setTimeout(() => setConfirmDeleteId(null), 4000);
-                        }}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all cursor-pointer"
-                        title="Delete product"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
+                      {confirmDeleteId === p.id ? (
+                        <button
+                          onClick={() => handleDelete(p.id)}
+                          className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded-lg cursor-pointer"
+                        >
+                          Sure?
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => { setConfirmDeleteId(p.id); setTimeout(() => setConfirmDeleteId(null), 4000); }}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all cursor-pointer"
+                          title="Delete product"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -42,14 +42,14 @@ const Sidebar: React.FC = () => {
   const { currentTab, setCurrentTab, currentUser, db } = useApp();
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, role: 'Cashier' },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, role: 'Admin' },
     { id: 'pos', label: 'POS', icon: ShoppingBag, role: 'Cashier' },
     { id: 'sales-history', label: 'Sales History', icon: History, role: 'Cashier' },
     { id: 'workshop', label: 'Workshop', icon: Wrench, role: 'Cashier' },
     { id: 'reminders', label: 'Reminders', icon: Bell, role: 'Cashier' },
     { id: 'inventory', label: 'Inventory', icon: Package, role: 'Cashier' },
     { id: 'purchase', label: 'Purchases', icon: Coins, role: 'Admin' },
-    { id: 'expenses', label: 'Expenses', icon: DollarSign, role: 'Cashier' },
+    { id: 'expenses', label: 'Expenses', icon: DollarSign, role: 'Admin' },
     { id: 'banking', label: 'Banking', icon: Building, role: 'Admin' },
     { id: 'customers', label: 'Customers', icon: Users, role: 'Cashier' },
     { id: 'reporting', label: 'Reports', icon: BarChart, role: 'Admin' },
