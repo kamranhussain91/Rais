@@ -90,9 +90,10 @@ interface CustomerDetailProps {
   onEdit: () => void;
   onRecordPayment: (amount: number, note: string, bankAccountId: string) => Promise<void>;
   accounts: { id: string; bankName: string }[];
+  showEdit?: boolean;
 }
 
-const CustomerDetail: React.FC<CustomerDetailProps> = ({ customer, invoices, onClose, onEdit, onRecordPayment, accounts }) => {
+const CustomerDetail: React.FC<CustomerDetailProps> = ({ customer, invoices, onClose, onEdit, onRecordPayment, accounts, showEdit = true }) => {
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [paymentNote, setPaymentNote]     = useState<string>('');
   const [paymentBankId, setPaymentBankId] = useState<string>('cash_chest');
@@ -140,9 +141,11 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({ customer, invoices, onC
             <h2 className="font-bold text-slate-800 truncate">{customer.name}</h2>
             <p className="text-xs text-slate-500 font-mono">{customer.phone}</p>
           </div>
-          <button onClick={onEdit} className="px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg transition-all cursor-pointer">
-            Edit
-          </button>
+          {showEdit && (
+            <button onClick={onEdit} className="px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg transition-all cursor-pointer">
+              Edit
+            </button>
+          )}
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 text-slate-400 cursor-pointer">
             <X className="w-4 h-4" />
           </button>
@@ -321,7 +324,8 @@ const CustomerDetail: React.FC<CustomerDetailProps> = ({ customer, invoices, onC
 
 // ─── Main CustomersView ───────────────────────────────────────────────────────
 export const CustomersView: React.FC = () => {
-  const { db, saveCustomer, updateCustomer, deleteCustomer, recordCreditPayment } = useApp();
+  const { db, saveCustomer, updateCustomer, deleteCustomer, recordCreditPayment, currentUser } = useApp();
+  const canEditCustomers = currentUser?.role !== 'Cashier';
 
   const [search,       setSearch]       = useState('');
   const [showAdd,      setShowAdd]      = useState(false);
@@ -495,20 +499,24 @@ export const CustomersView: React.FC = () => {
                       >
                         <ChevronRight className="w-3.5 h-3.5" />
                       </button>
-                      <button
-                        onClick={() => setEditCust(c)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-all cursor-pointer"
-                        title="Edit customer"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(c)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:border-red-300 hover:bg-red-50 text-slate-400 hover:text-red-600 transition-all cursor-pointer"
-                        title="Delete customer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {canEditCustomers && (
+                        <>
+                          <button
+                            onClick={() => setEditCust(c)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-all cursor-pointer"
+                            title="Edit customer"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(c)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:border-red-300 hover:bg-red-50 text-slate-400 hover:text-red-600 transition-all cursor-pointer"
+                            title="Delete customer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -538,6 +546,7 @@ export const CustomersView: React.FC = () => {
           onClose={() => setViewCust(null)}
           onEdit={() => { setEditCust(liveViewCust); setViewCust(null); }}
           onRecordPayment={handleRecordPayment}
+          showEdit={canEditCustomers}
         />
       )}
     </div>

@@ -90,6 +90,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const found = data.users.find(u => u.id === savedUserId && u.status !== 'Inactive');
         if (found) {
           setCurrentUser(found);
+          setCurrentTab(found.role === 'Cashier' ? 'pos' : 'dashboard');
         } else {
           setCurrentUser(null);
         }

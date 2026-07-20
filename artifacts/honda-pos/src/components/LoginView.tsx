@@ -8,7 +8,7 @@ import { useApp } from './AppContext';
 import { Lock, User as UserIcon, ShieldAlert } from 'lucide-react';
 
 export const LoginView: React.FC = () => {
-  const { db, setCurrentUser } = useApp();
+  const { db, setCurrentUser, setCurrentTab } = useApp();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -37,8 +37,9 @@ export const LoginView: React.FC = () => {
       return;
     }
 
-    // Success login
+    // Success login — cashiers land on POS, all others on Dashboard
     setCurrentUser(foundUser);
+    setCurrentTab(foundUser.role === 'Cashier' ? 'pos' : 'dashboard');
   };
 
   return (
