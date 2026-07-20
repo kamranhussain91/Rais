@@ -17,15 +17,6 @@
       "password": "cashier",
       "status": "Active",
       "lastLogin": "2026-06-02T08:30:00.000Z"
-    },
-    {
-      "id": "4",
-      "username": "storekeeper",
-      "role": "Store Keeper",
-      "name": "Store Keeper",
-      "password": "keeper",
-      "status": "Active",
-      "lastLogin": "2026-06-02T08:15:00.000Z"
     }
   ],
   "products": [
@@ -52,7 +43,7 @@
       "compatibility": "CG-125, CG-125 Self, CB-150F",
       "purchasePrice": 920,
       "sellingPrice": 1100,
-      "stock": 419,
+      "stock": 449,
       "minStock": 8,
       "supplierName": "Honda Atlas Parts Ltd",
       "location": "Pallet B, Floor"
@@ -731,14 +722,14 @@
           "partNumber": "08C35-20W50",
           "purchasePrice": 920,
           "qty": 100,
-          "qtyReceived": 70
+          "qtyReceived": 100
         }
       ],
       "totalAmount": 92000,
       "amountPaid": 0,
       "paymentMethod": "Bank Transfer",
       "bankAccountId": "bank_1",
-      "status": "partial"
+      "status": "received"
     },
     {
       "id": "pur_1784549775848",

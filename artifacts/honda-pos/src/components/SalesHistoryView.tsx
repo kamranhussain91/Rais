@@ -553,7 +553,8 @@ const EditInvoiceModal: React.FC<{
 
 // ── Main Sales History View ──────────────────────────────────────────────────
 export const SalesHistoryView: React.FC = () => {
-  const { db, updateSaleInvoice } = useApp();
+  const { db, updateSaleInvoice, currentUser } = useApp();
+  const canEdit = currentUser?.role === 'Super Admin';
   const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState(sevenDaysAgo());
   const [dateTo, setDateTo] = useState(today());
@@ -673,13 +674,15 @@ export const SalesHistoryView: React.FC = () => {
                   <td className="px-4 py-3 text-center">{getFbrBadge(inv)}</td>
                   <td className="px-4 py-3 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => setEditInvoice(inv)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 text-slate-500 hover:text-blue-700 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        Edit
-                      </button>
+                      {canEdit && (
+                        <button
+                          onClick={() => setEditInvoice(inv)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 text-slate-500 hover:text-blue-700 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          Edit
+                        </button>
+                      )}
                       <button
                         onClick={() => setPrintInvoice(inv)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:border-red-300 hover:bg-red-50 text-slate-500 hover:text-red-700 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
